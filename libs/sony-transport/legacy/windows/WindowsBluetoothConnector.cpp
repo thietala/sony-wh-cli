@@ -74,7 +74,7 @@ WindowsBluetoothConnector::~WindowsBluetoothConnector()
 
 int WindowsBluetoothConnector::send(char* buf, size_t length)
 {
-	auto bytesSent = ::send(this->_socket, buf, length, 0);
+	auto bytesSent = ::send(this->_socket, buf, static_cast<int>(length), 0);
 	if (bytesSent == SOCKET_ERROR)
 	{
 		throw RecoverableException("Couldn't send (" + std::to_string(WSAGetLastError()) + ")", true);
@@ -84,7 +84,7 @@ int WindowsBluetoothConnector::send(char* buf, size_t length)
 
 int WindowsBluetoothConnector::recv(char* buf, size_t length)
 {
-	auto bytesReceived = ::recv(this->_socket, buf, length, 0);
+	auto bytesReceived = ::recv(this->_socket, buf, static_cast<int>(length), 0);
 	if (bytesReceived == SOCKET_ERROR)
 	{
 		int err = WSAGetLastError();
@@ -192,12 +192,12 @@ void WindowsBluetoothConnector::_initSocket()
 std::string WindowsBluetoothConnector::_wstringToUtf8(const std::wstring& wstr)
 {
 	std::string strTo;
-	const int num_chars = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.length(), NULL, 0, NULL, NULL);
+	const int num_chars = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), static_cast<int>(wstr.length()), NULL, 0, NULL, NULL);
 
 	if (num_chars > 0)
 	{
 		strTo.resize(num_chars);
-		WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), wstr.length(), &strTo[0], num_chars, NULL, NULL);
+		WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), static_cast<int>(wstr.length()), &strTo[0], num_chars, NULL, NULL);
 	}
 	return strTo;
 }
