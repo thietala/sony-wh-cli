@@ -22,11 +22,16 @@ WindowsBluetoothConnector::WindowsBluetoothConnector()
 
 bool WindowsBluetoothConnector::_tryConnect(const char* uuid, SOCKADDR_BTH& sab)
 {
-	RPC_STATUS errCode = ::UuidFromStringA((RPC_CSTR)uuid, &sab.serviceClassId);
+	// UuidFromStringA into a local rather than &sab.serviceClassId directly: MSVC can't
+	// prove a GUID reached through a struct reference is naturally aligned, and warns
+	// (C4366, fatal under /WX). A local GUID is guaranteed aligned; copy it in after.
+	GUID serviceClassId{};
+	RPC_STATUS errCode = ::UuidFromStringA((RPC_CSTR)uuid, &serviceClassId);
 	if (errCode != RPC_S_OK)
 	{
 		throw std::runtime_error("Couldn't create GUID: " + std::to_string(errCode));
 	}
+	sab.serviceClassId = serviceClassId;
 	return ::connect(this->_socket, (sockaddr*)&sab, sizeof(sab)) == 0;
 }
 
