@@ -30,7 +30,7 @@ std::vector<std::string> splitTokens(std::string_view str) {
 std::string toLower(std::string_view s) {
     std::string res(s);
     std::transform(res.begin(), res.end(), res.begin(), [](unsigned char c) {
-        return std::tolower(c);
+        return static_cast<char>(std::tolower(c));
     });
     return res;
 }
