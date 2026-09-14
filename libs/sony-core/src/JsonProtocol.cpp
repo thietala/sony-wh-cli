@@ -102,7 +102,7 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
         response["ok"] = true; response["data"] = std::move(data);
     } catch (const SonyException& ex) {
         response["error"] = {{"code", std::string(to_string(ex.code()))}, {"message", ex.what()}};
-    } catch (const Json::exception& ex) {
+    } catch (const Json::exception&) {
         response["error"] = {{"code", "InvalidRequest"}, {"message", "Missing or incorrectly typed request field"}};
     } catch (const std::invalid_argument& ex) {
         response["error"] = {{"code", "InvalidRequest"}, {"message", ex.what()}};
