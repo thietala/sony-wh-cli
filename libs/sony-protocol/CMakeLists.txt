@@ -14,6 +14,7 @@ add_library(sony-protocol
 )
 
 target_compile_features(sony-protocol PUBLIC cxx_std_20)
+target_compile_options(sony-protocol PRIVATE ${SONY_WARNING_FLAGS})
 
 target_include_directories(sony-protocol
     PUBLIC

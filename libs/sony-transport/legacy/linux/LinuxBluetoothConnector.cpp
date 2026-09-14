@@ -61,7 +61,7 @@ int LinuxBluetoothConnector::send(char *buf, size_t length)
 
 void LinuxBluetoothConnector::connect(const std::string &addrStr)
 {
-  struct sockaddr_rc addr = {0};
+  struct sockaddr_rc addr = {};
   int status;
   const char *dest = addrStr.c_str();
 

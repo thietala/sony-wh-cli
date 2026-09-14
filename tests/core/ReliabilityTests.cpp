@@ -152,7 +152,7 @@ TEST_CASE("IPC isolates idle oversized and disappearing clients", "[core][ipc][s
         CHECK(client.sendCommand("devices").success);
     }
     SECTION("Client disappears before response") {
-        { ClientFd vanished(socket.path); ::write(vanished.fd,"devices\n",8); }
+        { ClientFd vanished(socket.path); ssize_t written = ::write(vanished.fd,"devices\n",8); (void)written; }
         CHECK(client.sendCommand("devices").success);
     }
     SECTION("JSON and legacy clients coexist") {

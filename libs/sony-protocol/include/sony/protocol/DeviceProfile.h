@@ -72,6 +72,7 @@ struct DeviceProfile
         case SonyModel::WH1000XM6: return "WH-1000XM6";
         case SonyModel::WF1000XM4: return "WF-1000XM4";
         case SonyModel::WF1000XM5: return "WF-1000XM5";
+        case SonyModel::WF1000XM6: return "WF-1000XM6";
         case SonyModel::WHCH720N:  return "WH-CH720N";
         case SonyModel::ULTWear:    return "ULT WEAR";
         case SonyModel::LinkBudsS:  return "LinkBuds S";

@@ -39,7 +39,7 @@ TEST_CASE("DeviceEventDispatcher manual dispatch and listener unregistration", "
 
     int stateCallCount = 0;
     DeviceStateSnapshot lastState;
-    auto stateSub = dispatcher.onStateChanged([&](const DeviceStateChanged& evt) {
+    [[maybe_unused]] auto stateSub = dispatcher.onStateChanged([&](const DeviceStateChanged& evt) {
         stateCallCount++;
         lastState = evt.state;
     });
