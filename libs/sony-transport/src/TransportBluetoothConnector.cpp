@@ -84,7 +84,9 @@ std::vector<BluetoothDevice> TransportBluetoothConnector::getConnectedDevices() 
     for (const auto& d : discovered) {
         result.push_back(BluetoothDevice{
             .name = d.name,
-            .mac = d.address.str()
+            .mac = d.address.str(),
+            .paired = std::nullopt,
+            .connected = std::nullopt
         });
     }
     return result;

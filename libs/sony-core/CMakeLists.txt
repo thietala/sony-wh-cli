@@ -11,6 +11,7 @@ add_library(sony-core
 )
 
 target_compile_features(sony-core PUBLIC cxx_std_20)
+target_compile_options(sony-core PRIVATE ${SONY_WARNING_FLAGS})
 
 target_include_directories(sony-core
     PUBLIC

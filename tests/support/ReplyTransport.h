@@ -25,6 +25,16 @@ public:
         if (p.empty()) return count;
         std::vector<uint8_t> reply;
         if (p[0] == 0) reply = {1,0};
+        // GET 10 <type> -> RET 11 <type> ... (V1 battery; distinct from 0x22,
+        // which is POWER OFF on V1 devices). Unanswered, ProtocolV1::getBattery()
+        // burns its full per-query timeout three times over on every connect
+        // to a V1-named device - exactly the kind of real-time wait that is
+        // merely slow on a fast CI runner and a timeout on a slow one.
+        if (p[0] == 0x10) {
+            if (p[1] == 0) reply = {0x11,0,80,0};
+            else if (p[1] == 1) reply = {0x11,1,80,0,80,0};
+            else if (p[1] == 2) reply = {0x11,2,80,0};
+        }
         if (p[0] == 0x22) {
             if (p[1] == 9) reply = {0x23,9,81,0,79,0};
             else reply = {0x23,p[1],85,0};

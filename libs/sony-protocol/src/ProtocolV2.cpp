@@ -11,7 +11,8 @@ namespace {
 
 // Auto-power-off codes: 0=Off, 1=5min, 2=30min, 3=1h, 4=3h, 5=when-taken-off
 const std::pair<uint8_t, uint8_t> APO_CODES[] = {
-    { 0x11, 0x00 }, { 0x00, 0x00 }, { 0x01, 0x01 }, { 0x02, 0x02 }, { 0x03, 0x03 }, { 0x10, 0x00 }
+    { uint8_t{0x11}, uint8_t{0x00} }, { uint8_t{0x00}, uint8_t{0x00} }, { uint8_t{0x01}, uint8_t{0x01} },
+    { uint8_t{0x02}, uint8_t{0x02} }, { uint8_t{0x03}, uint8_t{0x03} }, { uint8_t{0x10}, uint8_t{0x00} }
 };
 
 int apoIndexFromCode(uint8_t c0, uint8_t c1) {

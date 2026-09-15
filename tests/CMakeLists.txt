@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.14)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     project(SonyWhCliTests LANGUAGES CXX)
     include(CTest)
+    if(MSVC)
+        set(SONY_WARNING_FLAGS /W4 /WX)
+    else()
+        set(SONY_WARNING_FLAGS -Wall -Wextra -Wno-missing-field-initializers -Werror)
+    endif()
 endif()
 
 if(NOT BUILD_TESTING)
@@ -58,6 +63,7 @@ add_executable(sony-protocol-tests
     "${SONY_LEGACY_DIR}/Headphones.cpp"
 )
 target_compile_features(sony-protocol-tests PRIVATE cxx_std_20)
+target_compile_options(sony-protocol-tests PRIVATE ${SONY_WARNING_FLAGS})
 target_include_directories(sony-protocol-tests PRIVATE "${SONY_LEGACY_DIR}")
 target_link_libraries(sony-protocol-tests PRIVATE Catch2::Catch2WithMain Threads::Threads sony-transport sony-protocol)
 catch_discover_tests(sony-protocol-tests PROPERTIES TIMEOUT 10)
@@ -71,6 +77,7 @@ add_executable(sony-transport-tests
     "${SONY_LEGACY_DIR}/BluetoothWrapper.cpp"
 )
 target_compile_features(sony-transport-tests PRIVATE cxx_std_20)
+target_compile_options(sony-transport-tests PRIVATE ${SONY_WARNING_FLAGS})
 target_include_directories(sony-transport-tests PRIVATE "${SONY_LEGACY_DIR}")
 target_link_libraries(sony-transport-tests PRIVATE Catch2::Catch2WithMain Threads::Threads sony-transport sony-protocol)
 catch_discover_tests(sony-transport-tests PROPERTIES TIMEOUT 10)
@@ -82,5 +89,6 @@ add_executable(sony-core-tests
     core/ProtocolSafetyTests.cpp
 )
 target_compile_features(sony-core-tests PRIVATE cxx_std_20)
+target_compile_options(sony-core-tests PRIVATE ${SONY_WARNING_FLAGS})
 target_link_libraries(sony-core-tests PRIVATE Catch2::Catch2WithMain Threads::Threads sony-transport sony-protocol sony-core)
 catch_discover_tests(sony-core-tests PROPERTIES TIMEOUT 10)

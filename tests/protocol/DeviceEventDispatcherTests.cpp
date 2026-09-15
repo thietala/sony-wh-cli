@@ -39,7 +39,7 @@ TEST_CASE("DeviceEventDispatcher manual dispatch and listener unregistration", "
 
     int stateCallCount = 0;
     DeviceStateSnapshot lastState;
-    auto stateSub = dispatcher.onStateChanged([&](const DeviceStateChanged& evt) {
+    [[maybe_unused]] auto stateSub = dispatcher.onStateChanged([&](const DeviceStateChanged& evt) {
         stateCallCount++;
         lastState = evt.state;
     });
@@ -220,7 +220,6 @@ TEST_CASE("DeviceEventDispatcher concurrency and reentrancy safety", "[events][c
     DeviceEventDispatcher dispatcher;
     DeviceState state;
 
-    std::atomic<bool> running{true};
     std::atomic<int> receivedCount{0};
 
     // Callback that takes a read or dispatches re-entrantly
@@ -234,7 +233,7 @@ TEST_CASE("DeviceEventDispatcher concurrency and reentrancy safety", "[events][c
 
     std::vector<std::thread> workers;
     for (int i = 0; i < 4; ++i) {
-        workers.emplace_back([&, id = i]() {
+        workers.emplace_back([&]() {
             for (int step = 0; step < 100; ++step) {
                 std::vector<uint8_t> bat = {0x25, 0x00, static_cast<uint8_t>(step % 100), 0};
                 DeviceState localState;

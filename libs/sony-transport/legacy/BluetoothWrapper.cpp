@@ -118,11 +118,15 @@ CommandSerializer::Message BluetoothWrapper::_readMessage()
 		{
 			numRecvd = this->_connector->recv(buf, sizeof(buf));
 		}
+		if (numRecvd < 0)
+		{
+			numRecvd = 0;
+		}
 
 		size_t messageStart = 0;
-		size_t messageEnd = numRecvd;
+		size_t messageEnd = static_cast<size_t>(numRecvd);
 
-		for (size_t i = 0; i < numRecvd; i++)
+		for (size_t i = 0; i < static_cast<size_t>(numRecvd); i++)
 		{
 			if (buf[i] == START_MARKER)
 			{

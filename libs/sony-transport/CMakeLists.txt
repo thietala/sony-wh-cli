@@ -16,6 +16,7 @@ add_library(sony-transport
 )
 
 target_compile_features(sony-transport PUBLIC cxx_std_20)
+target_compile_options(sony-transport PRIVATE ${SONY_WARNING_FLAGS})
 
 target_include_directories(sony-transport
     PUBLIC
