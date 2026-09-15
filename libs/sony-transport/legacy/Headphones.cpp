@@ -320,7 +320,9 @@ namespace
 {
 	// Auto-power-off 2-byte codes, indexed 0=Off,1=5min,2=30min,3=1h,4=3h,5=when-taken-off.
 	const std::pair<unsigned char, unsigned char> APO_CODES[] = {
-		{ 0x11, 0x00 }, { 0x00, 0x00 }, { 0x01, 0x01 }, { 0x02, 0x02 }, { 0x03, 0x03 }, { 0x10, 0x00 }
+		{ (unsigned char)0x11, (unsigned char)0x00 }, { (unsigned char)0x00, (unsigned char)0x00 },
+		{ (unsigned char)0x01, (unsigned char)0x01 }, { (unsigned char)0x02, (unsigned char)0x02 },
+		{ (unsigned char)0x03, (unsigned char)0x03 }, { (unsigned char)0x10, (unsigned char)0x00 }
 	};
 
 	int apoIndexFromCode(unsigned char c0, unsigned char c1)
@@ -462,7 +464,7 @@ void Headphones::setChanges()
 		{
 			auto ncAsmEffect = this->_ambientSoundControl.desired ? NC_ASM_EFFECT::ADJUSTMENT_COMPLETION : NC_ASM_EFFECT::OFF;
 			auto asmId = this->_focusOnVoice.desired ? ASM_ID::VOICE : ASM_ID::NORMAL;
-			auto asmLevel = this->_ambientSoundControl.desired ? this->_asmLevel.desired : ASM_LEVEL_DISABLED;
+			char asmLevel = static_cast<char>(this->_ambientSoundControl.desired ? this->_asmLevel.desired : ASM_LEVEL_DISABLED);
 
 			this->_conn.sendCommand(CommandSerializer::serializeNcAndAsmSetting(
 				ncAsmEffect,
