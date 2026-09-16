@@ -100,6 +100,11 @@ Installs `sony-wh-cli` and `sonyd` to `<prefix>/bin` (default prefix
 `/usr/local`; skip `sudo` if you passed
 `-DCMAKE_INSTALL_PREFIX=$HOME/.local` at configure time).
 
+On Linux/macOS, a `Makefile` at the repo root wraps the above for less
+typing: `make` (configure + build), `sudo make install`, `make clean`.
+Run `make help` for the full list. It's a convenience wrapper only — CI
+and Windows still use CMake directly.
+
 ## Running tests
 
 ```
