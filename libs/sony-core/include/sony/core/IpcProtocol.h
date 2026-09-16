@@ -23,6 +23,7 @@ enum class IpcCommandType {
     Status,
     Reset,
     FactoryReset,
+    Raw,
     Unknown
 };
 

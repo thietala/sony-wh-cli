@@ -280,6 +280,19 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(stcResp.success);
         CHECK(service.snapshot()->speakToChat == true);
 
+        // Raw (debug escape hatch): sends the exact bytes given, bypassing
+        // every capability check — used to test unconfirmed opcodes.
+        auto rawResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw d8 d2 01 00"), service);
+        CHECK(rawResp.success);
+        auto rawSent = FrameCodec::decode(transport->lastSentFrame());
+        CHECK(rawSent.payload == std::vector<uint8_t>{0xd8, 0xd2, 0x01, 0x00});
+
+        auto rawNoArgsResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw"), service);
+        CHECK_FALSE(rawNoArgsResp.success);
+
+        auto rawBadHexResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw zz"), service);
+        CHECK_FALSE(rawBadHexResp.success);
+
         // Adaptive Volume
         auto avResp = IpcProtocol::execute(IpcProtocol::parseCommand("adaptivevolume off"), service);
         CHECK(avResp.success);

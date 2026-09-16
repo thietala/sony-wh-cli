@@ -365,6 +365,11 @@ void SonyDevice::factoryReset() {
     _protocol->factoryReset();
 }
 
+void SonyDevice::sendRaw(const std::vector<uint8_t>& payload) {
+    if (!_session) return;
+    _session->send(protocol::SonyFrame{ .type = protocol::DataType::DataMdr, .payload = payload });
+}
+
 void SonyDevice::_markSuccess(const std::string& feature) {
     std::lock_guard lock(_stateMutex);
     _state.features[feature] = {"valid", protocol::stateTimestamp(), {}};

@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace sony::core {
 
@@ -61,6 +62,11 @@ public:
     void setAdaptiveVolume(bool enabled);
     void reset();
     void factoryReset();
+
+    // Debug escape hatch for reverse-engineering: sends an arbitrary MDR
+    // payload as-is, bypassing IProtocol and every capability check. Not
+    // exposed anywhere near the normal command set — see sendRaw's callers.
+    void sendRaw(const std::vector<uint8_t>& payload);
 
 private:
     unsigned _refreshStep{0};

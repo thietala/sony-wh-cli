@@ -2,7 +2,10 @@
 #include "sony/core/JsonProtocol.h"
 #include "sony/protocol/EqualizerPresets.h"
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
+#include <stdexcept>
+#include <vector>
 
 namespace sony::core {
 
@@ -94,6 +97,8 @@ IpcCommand IpcProtocol::parseCommand(std::string_view line) {
         cmd.type = IpcCommandType::Reset;
     } else if (verb == "factoryreset") {
         cmd.type = IpcCommandType::FactoryReset;
+    } else if (verb == "raw") {
+        cmd.type = IpcCommandType::Raw;
     }
 
     if (tokens.size() > 1) {
@@ -380,6 +385,36 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             dev->factoryReset();
             resp.success = true;
             resp.message = "Factory reset sent; pairing wiped, headphones will need to be re-paired";
+            return resp;
+        }
+
+        // Debug escape hatch: send arbitrary hex bytes as an MDR payload,
+        // bypassing every capability check. For reverse-engineering an
+        // opcode before it gets a real implementation — not a supported
+        // command, deliberately undocumented in --help.
+        case IpcCommandType::Raw: {
+            if (cmd.args.empty()) {
+                resp.success = false;
+                resp.message = "Usage: raw <hex byte> [hex byte...]";
+                return resp;
+            }
+            std::vector<uint8_t> payload;
+            payload.reserve(cmd.args.size());
+            try {
+                for (const auto& arg : cmd.args) {
+                    size_t consumed = 0;
+                    unsigned long byte = std::stoul(arg, &consumed, 16);
+                    if (consumed != arg.size() || byte > 0xff) throw std::invalid_argument(arg);
+                    payload.push_back(static_cast<uint8_t>(byte));
+                }
+            } catch (const std::exception&) {
+                resp.success = false;
+                resp.message = "Invalid hex byte in raw payload";
+                return resp;
+            }
+            dev->sendRaw(payload);
+            resp.success = true;
+            resp.message = "Raw payload sent";
             return resp;
         }
 
