@@ -86,6 +86,8 @@ IpcCommand IpcProtocol::parseCommand(std::string_view line) {
         cmd.type = IpcCommandType::AutoPowerOff;
     } else if (verb == "status") {
         cmd.type = IpcCommandType::Status;
+    } else if (verb == "reset") {
+        cmd.type = IpcCommandType::Reset;
     }
 
     if (tokens.size() > 1) {
@@ -340,6 +342,13 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             resp.success = true;
             resp.message = "Connected";
             resp.data = "model=" + dev->name();
+            return resp;
+        }
+
+        case IpcCommandType::Reset: {
+            dev->reset();
+            resp.success = true;
+            resp.message = "Headphone settings initialized; device will disconnect";
             return resp;
         }
 

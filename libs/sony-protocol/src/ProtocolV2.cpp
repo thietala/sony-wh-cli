@@ -321,4 +321,12 @@ void ProtocolV2::setAdaptiveVolume(bool enabled) {
     _session.send(SonyFrame{ .type = DataType::DataMdr, .payload = std::move(payload) });
 }
 
+void ProtocolV2::reset() {
+    // SET: f8 09 00 — "Initialize headphone settings" in Sony's own app.
+    // Confirmed by packet capture and real-hardware testing on a
+    // WH-1000XM5; the headphones disconnect a few frames later. Unverified
+    // on other models.
+    _session.send(SonyFrame{ .type = DataType::DataMdr, .payload = {0xf8, 0x09, 0x00} });
+}
+
 } // namespace sony::protocol

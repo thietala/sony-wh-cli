@@ -50,7 +50,7 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
         if (request.contains("id") && (request["id"].is_string() || request["id"].is_number_integer())) response["id"] = request["id"];
         else throw std::invalid_argument("Request id must be a string or integer");
         if (!request.contains("version") || request["version"] != Version) {
-            response["error"] = {{"code", "VersionMismatch"}, {"message", "Update sonyd and Sony Device Center to matching versions"}};
+            response["error"] = {{"code", "VersionMismatch"}, {"message", "Update sonyd and its client to matching versions"}};
             return response;
         }
         const auto method = request.at("method").get<std::string>();
@@ -96,6 +96,7 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
             else if (method == "speakToChat") { supported(c.speakToChat); dev->setSpeakToChat(params.at("enabled").get<bool>()); }
             else if (method == "adaptiveVolume") { supported(c.adaptiveVolume); dev->setAdaptiveVolume(params.at("enabled").get<bool>()); }
             else if (method == "autoPowerOff") { supported(c.autoPowerOff); dev->setAutoPowerOff(integer(params, "index", 0, 5)); }
+            else if (method == "reset") { supported(c.reset); dev->reset(); }
             else throw std::invalid_argument("Unknown method: " + method);
             data = snapshot(service);
         }

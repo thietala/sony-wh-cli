@@ -136,6 +136,22 @@ TEST_CASE("ProtocolV2: handles DSEE query and control", "[protocol][v2]")
     REQUIRE(sent.payload == std::vector<uint8_t>{0xe8, 0x01, 0x00});
 }
 
+TEST_CASE("ProtocolV2: reset sends the confirmed opcode", "[protocol][v2]")
+{
+    FakeTransport fake;
+    SonyProtocolSession session(&fake);
+    session.connect("11:22:33:44:55:66");
+
+    ProtocolV2 v2(session);
+
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::Ack, .sequence = 0 }));
+    v2.reset();
+
+    REQUIRE(fake.sentCount() == 1);
+    auto sent = FrameCodec::decode(fake.lastSentFrame());
+    REQUIRE(sent.payload == std::vector<uint8_t>{0xf8, 0x09, 0x00});
+}
+
 TEST_CASE("ProtocolV2: handles peripheral feature inquiries", "[protocol][v2]")
 {
     FakeTransport fake;

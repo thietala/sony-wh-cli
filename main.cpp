@@ -7,6 +7,7 @@
 #include "sony/transport/Logger.h"
 
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -35,12 +36,17 @@ void printHelp() {
               << "  eq <preset>                Shorthand for eq preset <preset>\n"
               << "  dsee on|off|auto           Toggle DSEE sound enhancement\n"
               << "  apo <0-5>                  Set Auto-Power-Off duration preset index\n"
-              << "  status                     Display connection status\n\n"
+              << "  status                     Display connection status\n"
+              << "  reset                      Initialize headphone settings (disconnects the\n"
+              << "                             device; confirmed on WH-1000XM5 only)\n\n"
               << "Options:\n"
               << "  -s, --socket <path>        Custom Unix domain socket path for sonyd\n"
-              << "  --direct                   Direct execution bypassing daemon\n"
+              << "  --direct                   Bypass sonyd for a one-off direct Bluetooth\n"
+              << "                             session (refuses to run alongside a live sonyd)\n"
               << "  -v, --verbose              Enable verbose diagnostic logging\n"
               << "  -h, --help                 Display this help menu\n\n"
+              << "sony-wh-cli requires sonyd to be running; start it with `sonyd` first,\n"
+              << "or pass --direct to skip the daemon for a single command.\n\n"
               << "Examples:\n"
               << "  sony-wh-cli anc on\n"
               << "  sony-wh-cli ambient 10\n"
@@ -91,33 +97,38 @@ int main(int argc, char* argv[]) {
     std::string commandLine = oss.str();
 
     IpcClient daemon(socketPath);
-    if (direct && daemon.isDaemonRunning()) {
+    bool daemonRunning = daemon.isDaemonRunning();
+
+    if (direct && daemonRunning) {
         std::cerr << "Error: sonyd is running and may own the Bluetooth session. Stop sonyd before using --direct.\n";
         return 1;
     }
-    // If direct execution requested or daemon not running, connect via local DeviceService
+
     if (!direct) {
-        IpcClient client(socketPath);
-        if (client.isDaemonRunning()) {
-            auto resp = client.sendCommand(commandLine);
-            if (resp.success) {
-                if (!resp.data.empty()) {
-                    std::cout << resp.data << "\n";
-                } else if (!resp.message.empty()) {
-                    std::cout << resp.message << "\n";
-                }
-                return 0;
-            } else {
-                std::cerr << "Error: " << resp.message << "\n";
-                return 1;
+        if (!daemonRunning) {
+            std::cerr << "Error: sonyd is not running at " << socketPath << "\n"
+                      << "Start it with `sonyd`, or pass --direct for a one-off direct Bluetooth session.\n";
+            return 1;
+        }
+        // sonyd connects to the headphones on demand rather than holding the
+        // link permanently (see IpcServer), so the first command after an
+        // idle period pays for a fresh Bluetooth connection here.
+        auto resp = daemon.sendCommand(commandLine, std::chrono::seconds(15));
+        if (resp.success) {
+            if (!resp.data.empty()) {
+                std::cout << resp.data << "\n";
+            } else if (!resp.message.empty()) {
+                std::cout << resp.message << "\n";
             }
+            return 0;
+        } else {
+            std::cerr << "Error: " << resp.message << "\n";
+            return 1;
         }
     }
 
-    // Fallback or Direct mode
-    if (direct) std::cerr << "Using a direct Bluetooth session (--direct).\n";
-    else std::cerr << "Notice: sonyd daemon is not running at " << socketPath << "\n"
-              << "Starting direct session...\n";
+    // Direct mode: bypass the daemon and open a one-off Bluetooth session.
+    std::cerr << "Using a direct Bluetooth session (--direct).\n";
 
     std::shared_ptr<ITransport> transport = transport::createPlatformTransport();
     std::shared_ptr<IDeviceDiscovery> discovery = transport::createPlatformDiscovery();
