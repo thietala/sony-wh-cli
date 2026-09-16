@@ -4,14 +4,11 @@ A fast, scriptable command-line tool and C++20 library for controlling Sony
 WH/WF headphones and earbuds — Ambient Sound, Noise Cancelling, Equalizer,
 Clear Bass, DSEE, and battery status — over Bluetooth, without the mobile app.
 
-This is a standalone extraction of the CLI and its protocol/transport/core
-libraries from [Sony Device Center](https://github.com/marconvcm/sony-device-center)
-(which also ships a Qt desktop app and `sonyd` background daemon). This repo
-has no dependency on that one or on Qt — everything needed to talk to the
-headphones lives here, so `libs/sony-core`, `libs/sony-protocol`, and
-`libs/sony-transport` can be dropped into another project (a status bar
-widget, a Quickshell/Wayland shell integration, etc.) without dragging in
-a GUI.
+Everything needed to talk to the headphones lives in this repo — no Qt, no
+GUI dependency. `libs/sony-core`, `libs/sony-protocol`, and
+`libs/sony-transport` can also be dropped into another project (a status bar
+widget, a Quickshell/Wayland shell integration, etc.) independently of the
+CLI and daemon binaries.
 
 ## Usage
 
@@ -37,12 +34,10 @@ sonyd &
 sony-wh-cli battery
 ```
 
-`sonyd` is built from this repo (see below) — it doesn't need
-sony-device-center installed. Pass `--direct` to `sony-wh-cli` to bypass the
-daemon for a one-off direct Bluetooth session instead; it refuses to run
-alongside a live `sonyd`, since both would fight over the same connection.
-IPC is Unix-only, so on Windows `sonyd` isn't functional and `--direct` is
-the only option.
+Pass `--direct` to `sony-wh-cli` to bypass the daemon for a one-off direct
+Bluetooth session instead; it refuses to run alongside a live `sonyd`, since
+both would fight over the same connection. IPC is Unix-only, so on Windows
+`sonyd` isn't functional and `--direct` is the only option.
 
 ## Repository layout
 
@@ -58,9 +53,7 @@ tests/                       Catch2 unit tests for the three libraries
 
 `libs/sony-transport/legacy/` holds the original Bluetooth connector
 implementations (Linux/BlueZ+D-Bus, macOS/IOBluetooth, Windows/WinRT) this
-project was built on — see the "References & Prior Art" section of the
-[sony-device-center README](https://github.com/marconvcm/sony-device-center)
-for where that code originally came from.
+project was built on.
 
 ## Building from source
 
@@ -84,9 +77,8 @@ ctest --test-dir build --output-on-failure
 
 ## Supported devices
 
-See the [device compatibility matrix](https://github.com/marconvcm/sony-device-center#-supported-devices)
-in sony-device-center — this CLI supports whatever the shared protocol
-libraries support.
+Any Sony WH/WF headphone or earbud model that speaks Sony's V1 or V2
+Bluetooth protocol, as implemented in `libs/sony-protocol`.
 
 ## License
 

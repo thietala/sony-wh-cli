@@ -13,14 +13,14 @@ namespace sony::core {
 std::string defaultSocketPath() {
 #ifndef _WIN32
     const char* xdg = std::getenv("XDG_RUNTIME_DIR");
-    if (xdg && *xdg) return std::string(xdg) + "/sony-device-center.sock";
+    if (xdg && *xdg) return std::string(xdg) + "/sonyd.sock";
 #ifdef __APPLE__
-    return "/private/tmp/sony-device-center-" + std::to_string(::geteuid()) + "/sony-device-center.sock";
+    return "/private/tmp/sonyd-" + std::to_string(::geteuid()) + "/sonyd.sock";
 #else
-    return "/tmp/sony-device-center-" + std::to_string(::geteuid()) + "/sony-device-center.sock";
+    return "/tmp/sonyd-" + std::to_string(::geteuid()) + "/sonyd.sock";
 #endif
 #else
-    return "sony-device-center";
+    return "sonyd";
 #endif
 }
 IpcServer::IpcServer(std::shared_ptr<IDeviceService> service, std::string path)

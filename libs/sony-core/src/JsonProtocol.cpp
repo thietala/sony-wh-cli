@@ -50,7 +50,7 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
         if (request.contains("id") && (request["id"].is_string() || request["id"].is_number_integer())) response["id"] = request["id"];
         else throw std::invalid_argument("Request id must be a string or integer");
         if (!request.contains("version") || request["version"] != Version) {
-            response["error"] = {{"code", "VersionMismatch"}, {"message", "Update sonyd and Sony Device Center to matching versions"}};
+            response["error"] = {{"code", "VersionMismatch"}, {"message", "Update sonyd and its client to matching versions"}};
             return response;
         }
         const auto method = request.at("method").get<std::string>();
