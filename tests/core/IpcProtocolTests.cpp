@@ -37,28 +37,42 @@ public:
                     // Auto-respond to known inquiry requests
                     if (!frame.payload.empty()) {
                         uint8_t op = frame.payload[0];
-                        if (op == 0x22) { // Battery query
+                        uint8_t subtype = frame.payload.size() > 1 ? frame.payload[1] : 0x00;
+                        if (op == 0x00) { // Init handshake
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
-                                .payload = {0x23, 0x00, 85, 0x00}
+                                .sequence = _nextRespSeq(),
+                                .payload = {0x01, 0x00}
+                            }));
+                        } else if (op == 0x22) { // Battery query
+                            // Echo the requested subtype (main/dual/case) so
+                            // every getBattery() sub-query gets a matching
+                            // reply immediately instead of burning its full
+                            // 1s sendAndAwaitResponse timeout — connect()
+                            // calls getBattery() on every test, and 2-3
+                            // wasted seconds per connect adds up fast
+                            // against the 10s per-test CTest timeout.
+                            queueIncoming(FrameCodec::encode(SonyFrame{
+                                .type = DataType::DataMdr,
+                                .sequence = _nextRespSeq(),
+                                .payload = {0x23, subtype, 85, 0x00}
                             }));
                         } else if (op == 0x66) { // NC query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
+                                .sequence = _nextRespSeq(),
                                 .payload = {0x67, 0x17, 0x01, 0x01, 0x00, 0x00, 0x00}
                             }));
                         } else if (op == 0x56) { // EQ query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
+                                .sequence = _nextRespSeq(),
                                 .payload = {0x57, 0x00, 0x00, 0x06, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a}
                             }));
                         } else if (op == 0xe6) { // DSEE query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
+                                .sequence = _nextRespSeq(),
                                 .payload = {0xe7, 0x01, 0x00}
                             }));
                         }
@@ -68,6 +82,10 @@ public:
         }
         return res;
     }
+
+private:
+    uint8_t _nextRespSeq() { return _respSeq++; }
+    uint8_t _respSeq{0};
 };
 
 } // namespace

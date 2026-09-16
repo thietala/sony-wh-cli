@@ -39,6 +39,7 @@ public:
                     // Auto-respond to known inquiry requests
                     if (!frame.payload.empty()) {
                         uint8_t op = frame.payload[0];
+                        uint8_t subtype = frame.payload.size() > 1 ? frame.payload[1] : 0x00;
                         if (op == 0x00) { // Init query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
@@ -46,10 +47,13 @@ public:
                                 .payload = {0x01, 0x00}
                             }));
                         } else if (op == 0x22) { // Battery query
+                            // Echo the requested subtype (main/dual/case) so
+                            // every sub-query matches immediately instead of
+                            // burning its 1s sendAndAwaitResponse timeout.
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
                                 .sequence = _nextRespSeq(),
-                                .payload = {0x23, 0x00, 85, 0x00}
+                                .payload = {0x23, subtype, 85, 0x00}
                             }));
                         } else if (op == 0x66) { // NC query
                             queueIncoming(FrameCodec::encode(SonyFrame{
