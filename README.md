@@ -108,6 +108,18 @@ ctest --test-dir build --output-on-failure
 Any Sony WH/WF headphone or earbud model that speaks Sony's V1 or V2
 Bluetooth protocol, as implemented in `libs/sony-protocol`.
 
+## Roadmap
+
+- Test on a wider range of hardware — only a handful of models have been
+  verified so far, and neither Windows nor macOS has been tested on real
+  hardware at all (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)).
+- `sonyd`'s IPC is Unix-socket only; Windows needs a named-pipe equivalent
+  (and a real background-service story to go with it, e.g. a Windows
+  Service via the SCM). macOS already shares the Unix-socket code path but
+  still needs that hardware testing pass.
+- Reset / factory reset is not implemented — the opcode hasn't been
+  reverse-engineered yet. Open an issue if you find it.
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
