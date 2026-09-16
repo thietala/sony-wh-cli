@@ -37,6 +37,14 @@ Bluetooth session instead; it refuses to run alongside a live `sonyd`, since
 both would fight over the same connection. IPC is Unix-only, so on Windows
 `sonyd` isn't functional and `--direct` is the only option.
 
+`sonyd` connects to the headphones only when a command needs it, and
+disconnects again after about 15 seconds of inactivity. The headphones'
+proprietary control channel only accepts one companion connection at a time,
+so this lets your phone's own Sony app connect whenever the CLI isn't
+actively in use, instead of `sonyd` holding the link forever. The first
+command after a period of inactivity pays for a fresh Bluetooth connection
+and so takes a bit longer than the ones right after it.
+
 ### Running sonyd as a service (Linux)
 
 `cmake --install` also installs a `systemd --user` unit

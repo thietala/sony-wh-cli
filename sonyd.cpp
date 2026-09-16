@@ -63,8 +63,11 @@ int main(int argc, char* argv[]) {
 
     std::shared_ptr<ITransport> transport = transport::createPlatformTransport();
     std::shared_ptr<IDeviceDiscovery> discovery = transport::createPlatformDiscovery();
+    // No eager startAutoConnect() here: sonyd connects on demand when a
+    // command needs the device (see IpcServer) and releases the Bluetooth
+    // link again after a period of inactivity, so it doesn't permanently
+    // block a phone's own companion app from connecting.
     auto service = std::make_shared<DeviceService>(transport, discovery);
-    service->startAutoConnect();
 
     IpcServer server(service, socketPath);
     try {

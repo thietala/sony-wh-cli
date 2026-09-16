@@ -7,6 +7,7 @@
 #include "sony/transport/Logger.h"
 
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -107,7 +108,10 @@ int main(int argc, char* argv[]) {
                       << "Start it with `sonyd`, or pass --direct for a one-off direct Bluetooth session.\n";
             return 1;
         }
-        auto resp = daemon.sendCommand(commandLine);
+        // sonyd connects to the headphones on demand rather than holding the
+        // link permanently (see IpcServer), so the first command after an
+        // idle period pays for a fresh Bluetooth connection here.
+        auto resp = daemon.sendCommand(commandLine, std::chrono::seconds(15));
         if (resp.success) {
             if (!resp.data.empty()) {
                 std::cout << resp.data << "\n";

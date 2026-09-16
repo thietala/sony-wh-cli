@@ -306,3 +306,54 @@ TEST_CASE("IpcServer and IpcClient end-to-end communication over socket", "[core
     CHECK_FALSE(server.isRunning());
     CHECK_FALSE(client.isDaemonRunning());
 }
+
+TEST_CASE("IpcServer connects on demand and yields the device when idle", "[core][ipc]") {
+#ifdef _WIN32
+    SKIP("Unix IPC is not implemented on Windows");
+#endif
+    // Capability negotiation during connect() probes opcodes this fake doesn't
+    // answer, so it eats a real ~4s internal timeout before proceeding; give
+    // client calls that may trigger a fresh connect plenty of headroom.
+    constexpr auto kCommandTimeout = std::chrono::seconds(6);
+
+    auto transport = std::make_shared<AutoAckFakeTransport>();
+    auto discovery = std::make_shared<FakeDeviceDiscovery>();
+    discovery->addDevice(transport::DiscoveredDevice{.name = "WH-1000XM5", .address = DeviceAddress("11:22:33:44:55:66")});
+    auto service = std::make_shared<DeviceService>(transport, discovery);
+    REQUIRE_FALSE(service->isConnected());
+
+    PrivateSocket socket;
+    IpcClient client(socket.path);
+
+    SECTION("a command needing the device connects on demand") {
+        IpcServer server(service, socket.path);
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        auto resp = client.sendCommand("battery", kCommandTimeout);
+        CHECK(resp.success);
+        CHECK(service->isConnected());
+    }
+
+    SECTION("listing devices does not force a connection") {
+        IpcServer server(service, socket.path);
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        auto resp = client.sendCommand("devices", kCommandTimeout);
+        CHECK(resp.success);
+        CHECK_FALSE(service->isConnected());
+    }
+
+    SECTION("the device is released after being idle") {
+        IpcServer server(service, socket.path, std::chrono::milliseconds(500));
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        REQUIRE(client.sendCommand("battery", kCommandTimeout).success);
+        REQUIRE(service->isConnected());
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        CHECK_FALSE(service->isConnected());
+    }
+}

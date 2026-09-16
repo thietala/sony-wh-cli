@@ -23,8 +23,8 @@ std::string defaultSocketPath() {
     return "sonyd";
 #endif
 }
-IpcServer::IpcServer(std::shared_ptr<IDeviceService> service, std::string path)
-    : _service(std::move(service)), _socketPath(std::move(path)) {}
+IpcServer::IpcServer(std::shared_ptr<IDeviceService> service, std::string path, std::chrono::milliseconds idleDisconnect)
+    : _service(std::move(service)), _socketPath(std::move(path)), _idleDisconnect(idleDisconnect) {}
 IpcServer::~IpcServer() { stop(); }
 void IpcServer::start() {
     if (_running) return;
@@ -81,6 +81,22 @@ void IpcServer::stop() noexcept {
 }
 bool IpcServer::isRunning() const noexcept { return _running; }
 const std::string& IpcServer::socketPath() const noexcept { return _socketPath; }
+namespace {
+bool commandNeedsConnection(const std::string& line) {
+    auto start = line.find_first_not_of(" \r\t");
+    if (start != std::string::npos && (line[start] == '{' || line[start] == '['))
+        return false; // JSON clients manage connect/disconnect explicitly.
+    auto type = IpcProtocol::parseCommand(line).type;
+    return type != IpcCommandType::Devices && type != IpcCommandType::Status;
+}
+}
+void IpcServer::_connectOnDemand(const std::string& line) {
+    if (!_service || _service->isConnected() || !commandNeedsConnection(line)) return;
+    auto devices = _service->discoverDevices();
+    if (devices.empty()) return;
+    try { _service->connect(transport::DeviceAddress(devices.front().address), devices.front().name); }
+    catch (const std::exception&) { /* reported to the caller as "No device connected" */ }
+}
 void IpcServer::_executeLoop() {
     while (_running) {
         std::shared_ptr<Job> job;
@@ -92,15 +108,31 @@ void IpcServer::_executeLoop() {
         }
         if (job && !job->cancelled) {
             try {
+                if (_service) _connectOnDemand(job->line);
                 auto response = _service ? IpcProtocol::executeLine(job->line, *_service)
                     : IpcProtocol::serializeResponse({false, "No service available", {}});
                 if (response.size() > 256 * 1024) response = "ERR|Response too large|\n";
                 job->result.set_value(std::move(response));
             } catch (const std::exception&) { job->result.set_value("ERR|Internal service error|\n"); }
+            // Measured from completion, not arrival: a slow on-demand connect
+            // (real Bluetooth hardware, or a slow test fake) must not count
+            // against the idle budget below and trigger an immediate disconnect.
+            _lastActivity = std::chrono::steady_clock::now();
         }
         bool idle;
         { std::lock_guard lock(_queueMutex); idle = _jobs.empty(); }
-        if (_running && idle && _service) { try { _service->tick(); } catch (...) {} }
+        if (_running && idle && _service) {
+            try {
+                // The device's proprietary control channel is exclusive: as long as
+                // sonyd holds it, a phone's own companion app cannot connect. So
+                // sonyd only holds it while actually in use, releasing it this long
+                // after the last command.
+                if (_service->isConnected() && std::chrono::steady_clock::now() - _lastActivity > _idleDisconnect)
+                    _service->disconnect();
+                else
+                    _service->tick();
+            } catch (...) {}
+        }
     }
 }
 void IpcServer::_serverLoop() {
