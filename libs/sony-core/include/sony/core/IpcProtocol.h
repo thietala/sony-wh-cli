@@ -18,6 +18,8 @@ enum class IpcCommandType {
     EqCustom,
     Dsee,
     AutoPowerOff,
+    SpeakToChat,
+    AdaptiveVolume,
     Status,
     Reset,
     FactoryReset,

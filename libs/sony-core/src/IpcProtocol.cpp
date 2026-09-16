@@ -84,6 +84,10 @@ IpcCommand IpcProtocol::parseCommand(std::string_view line) {
         cmd.type = IpcCommandType::Dsee;
     } else if (verb == "autopoweroff" || verb == "apo") {
         cmd.type = IpcCommandType::AutoPowerOff;
+    } else if (verb == "speaktochat") {
+        cmd.type = IpcCommandType::SpeakToChat;
+    } else if (verb == "adaptivevolume") {
+        cmd.type = IpcCommandType::AdaptiveVolume;
     } else if (verb == "status") {
         cmd.type = IpcCommandType::Status;
     } else if (verb == "reset") {
@@ -337,6 +341,24 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             dev->setAutoPowerOff(idx);
             resp.success = true;
             resp.message = "Auto power off set to index " + std::to_string(idx);
+            return resp;
+        }
+
+        case IpcCommandType::SpeakToChat: {
+            bool on = true;
+            if (!cmd.args.empty() && toLower(cmd.args[0]) == "off") on = false;
+            dev->setSpeakToChat(on);
+            resp.success = true;
+            resp.message = on ? "Speak-to-Chat enabled" : "Speak-to-Chat disabled";
+            return resp;
+        }
+
+        case IpcCommandType::AdaptiveVolume: {
+            bool on = true;
+            if (!cmd.args.empty() && toLower(cmd.args[0]) == "off") on = false;
+            dev->setAdaptiveVolume(on);
+            resp.success = true;
+            resp.message = on ? "Adaptive Volume enabled" : "Adaptive Volume disabled";
             return resp;
         }
 

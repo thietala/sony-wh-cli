@@ -142,6 +142,14 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
         auto cmdApo = IpcProtocol::parseCommand("autopoweroff 3");
         CHECK(cmdApo.type == IpcCommandType::AutoPowerOff);
 
+        auto cmdSpeakToChat = IpcProtocol::parseCommand("speaktochat off");
+        CHECK(cmdSpeakToChat.type == IpcCommandType::SpeakToChat);
+        CHECK(cmdSpeakToChat.args[0] == "off");
+
+        auto cmdAdaptiveVolume = IpcProtocol::parseCommand("adaptivevolume on");
+        CHECK(cmdAdaptiveVolume.type == IpcCommandType::AdaptiveVolume);
+        CHECK(cmdAdaptiveVolume.args[0] == "on");
+
         auto cmdReset = IpcProtocol::parseCommand("reset");
         CHECK(cmdReset.type == IpcCommandType::Reset);
 
@@ -266,6 +274,16 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         auto apoResp = IpcProtocol::execute(IpcProtocol::parseCommand("apo 3"), service);
         CHECK(apoResp.success);
         CHECK(service.snapshot()->autoPowerOff == 3);
+
+        // Speak-to-Chat
+        auto stcResp = IpcProtocol::execute(IpcProtocol::parseCommand("speaktochat on"), service);
+        CHECK(stcResp.success);
+        CHECK(service.snapshot()->speakToChat == true);
+
+        // Adaptive Volume
+        auto avResp = IpcProtocol::execute(IpcProtocol::parseCommand("adaptivevolume off"), service);
+        CHECK(avResp.success);
+        CHECK(service.snapshot()->adaptiveVolume == false);
 
         service.disconnect();
         CHECK_FALSE(service.isConnected());
