@@ -25,16 +25,30 @@ sony-wh-cli eq preset bass-boost
 sony-wh-cli dsee on
 ```
 
-Run `sony-wh-cli --help` for the full command list. If `sonyd` (from
-sony-device-center) is running, the CLI talks to it over its local IPC
-socket; otherwise it falls back to a direct Bluetooth session (`--direct`
-forces this and refuses to run alongside a live `sonyd`, since both would
-fight over the same connection).
+Run `sony-wh-cli --help` for the full command list.
+
+`sony-wh-cli` is a thin client: it requires `sonyd` to be running and talks
+to it over a local IPC socket, so any number of callers (this CLI, a status
+bar widget, a script) can share one Bluetooth connection without fighting
+over it. Start the daemon first:
+
+```
+sonyd &
+sony-wh-cli battery
+```
+
+`sonyd` is built from this repo (see below) — it doesn't need
+sony-device-center installed. Pass `--direct` to `sony-wh-cli` to bypass the
+daemon for a one-off direct Bluetooth session instead; it refuses to run
+alongside a live `sonyd`, since both would fight over the same connection.
+IPC is Unix-only, so on Windows `sonyd` isn't functional and `--direct` is
+the only option.
 
 ## Repository layout
 
 ```
 main.cpp                    the sony-wh-cli binary
+sonyd.cpp                   the sonyd background daemon binary
 libs/sony-transport/         Bluetooth transport abstraction + platform connectors
 libs/sony-protocol/          Sony's binary protocol (V1 and V2), framing, device state
 libs/sony-core/              device service, IPC client/server, JSON protocol
