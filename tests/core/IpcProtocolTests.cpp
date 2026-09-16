@@ -144,6 +144,9 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
 
         auto cmdReset = IpcProtocol::parseCommand("reset");
         CHECK(cmdReset.type == IpcCommandType::Reset);
+
+        auto cmdFactoryReset = IpcProtocol::parseCommand("factoryreset");
+        CHECK(cmdFactoryReset.type == IpcCommandType::FactoryReset);
     }
 }
 

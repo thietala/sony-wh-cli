@@ -60,6 +60,7 @@ public:
     void setSpeakToChat(bool enabled);
     void setAdaptiveVolume(bool enabled);
     void reset();
+    void factoryReset();
 
 private:
     unsigned _refreshStep{0};

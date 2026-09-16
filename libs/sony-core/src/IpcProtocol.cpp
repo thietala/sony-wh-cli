@@ -88,6 +88,8 @@ IpcCommand IpcProtocol::parseCommand(std::string_view line) {
         cmd.type = IpcCommandType::Status;
     } else if (verb == "reset") {
         cmd.type = IpcCommandType::Reset;
+    } else if (verb == "factoryreset") {
+        cmd.type = IpcCommandType::FactoryReset;
     }
 
     if (tokens.size() > 1) {
@@ -349,6 +351,13 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             dev->reset();
             resp.success = true;
             resp.message = "Headphone settings initialized; device will disconnect";
+            return resp;
+        }
+
+        case IpcCommandType::FactoryReset: {
+            dev->factoryReset();
+            resp.success = true;
+            resp.message = "Factory reset sent; pairing wiped, headphones will need to be re-paired";
             return resp;
         }
 

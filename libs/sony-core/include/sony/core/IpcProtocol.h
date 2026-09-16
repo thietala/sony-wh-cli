@@ -20,6 +20,7 @@ enum class IpcCommandType {
     AutoPowerOff,
     Status,
     Reset,
+    FactoryReset,
     Unknown
 };
 

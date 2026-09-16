@@ -105,6 +105,7 @@ TEST_CASE("SonyDevice lifecycle and profile identification", "[core][device]") {
     CHECK(dev.capabilities().dsee);
     CHECK(dev.capabilities().speakToChat);
     CHECK(dev.capabilities().reset);
+    CHECK(dev.capabilities().factoryReset);
 
     dev.disconnect();
     CHECK_FALSE(dev.isConnected());
@@ -116,6 +117,7 @@ TEST_CASE("SonyDevice gates reset to models with a confirmed opcode", "[core][de
     SonyDevice xm5(transport, SonyProtocolVersion::V2);
     xm5.connect(DeviceAddress("11:22:33:44:55:66"), "WH-1000XM5");
     REQUIRE_NOTHROW(xm5.reset());
+    REQUIRE_NOTHROW(xm5.factoryReset());
 
     // Same V2 protocol, but reset hasn't been confirmed on this model, so
     // SonyDevice must refuse before ever touching the wire.
@@ -123,8 +125,10 @@ TEST_CASE("SonyDevice gates reset to models with a confirmed opcode", "[core][de
     SonyDevice xm5buds(otherTransport, SonyProtocolVersion::V2);
     xm5buds.connect(DeviceAddress("22:33:44:55:66:77"), "WF-1000XM5");
     CHECK_FALSE(xm5buds.capabilities().reset);
+    CHECK_FALSE(xm5buds.capabilities().factoryReset);
     auto sentBeforeReset = otherTransport->sentCount();
     REQUIRE_THROWS_AS(xm5buds.reset(), SonyException);
+    REQUIRE_THROWS_AS(xm5buds.factoryReset(), SonyException);
     CHECK(otherTransport->sentCount() == sentBeforeReset);
 }
 

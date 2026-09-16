@@ -61,6 +61,11 @@ struct DeviceCapabilities
     // since this codebase has already seen opcodes mean different things
     // across devices (0x22 is POWER_OFF on V1, BATTERY_GET on V2).
     bool reset = false;
+
+    // Same SYSTEM_SET_PARAM sub-type as reset (0xf8 0x09) but value 0x01
+    // instead of 0x00 — wipes the pairing itself; confirmed by real-hardware
+    // testing to require a full re-pair afterward. WH-1000XM5 only.
+    bool factoryReset = false;
 };
 
 struct DeviceProfile

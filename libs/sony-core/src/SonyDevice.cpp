@@ -356,6 +356,15 @@ void SonyDevice::reset() {
     _protocol->reset();
 }
 
+void SonyDevice::factoryReset() {
+    if (!_protocol) return;
+    // Same reasoning as reset(), but more so: this wipes the pairing
+    // itself, so an unconfirmed guess here is worse than unsupported.
+    if (!_capabilities.factoryReset)
+        throw SonyException(SonyErrorCode::Unsupported, "Factory reset opcode is unverified on this device model");
+    _protocol->factoryReset();
+}
+
 void SonyDevice::_markSuccess(const std::string& feature) {
     std::lock_guard lock(_stateMutex);
     _state.features[feature] = {"valid", protocol::stateTimestamp(), {}};

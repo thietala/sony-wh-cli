@@ -97,6 +97,7 @@ Json JsonProtocol::execute(const Json& request, IDeviceService& service) {
             else if (method == "adaptiveVolume") { supported(c.adaptiveVolume); dev->setAdaptiveVolume(params.at("enabled").get<bool>()); }
             else if (method == "autoPowerOff") { supported(c.autoPowerOff); dev->setAutoPowerOff(integer(params, "index", 0, 5)); }
             else if (method == "reset") { supported(c.reset); dev->reset(); }
+            else if (method == "factoryReset") { supported(c.factoryReset); dev->factoryReset(); }
             else throw std::invalid_argument("Unknown method: " + method);
             data = snapshot(service);
         }

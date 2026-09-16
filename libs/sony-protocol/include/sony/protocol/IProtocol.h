@@ -48,6 +48,11 @@ public:
     // capture and real-hardware testing on a WH-1000XM5 — only implemented
     // where confirmed (see DeviceCapabilities::reset).
     virtual void reset() = 0;
+
+    // Factory reset: wipes the pairing itself, not just settings. Confirmed
+    // by real-hardware testing to require a full re-pair afterward — only
+    // implemented where confirmed (see DeviceCapabilities::factoryReset).
+    virtual void factoryReset() = 0;
 };
 
 } // namespace sony::protocol
