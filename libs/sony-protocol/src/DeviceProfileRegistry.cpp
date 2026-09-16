@@ -82,7 +82,8 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
+                .multipoint = true,
+                .reset = true
             }
         },
         // WH-1000XM6 (V2 protocol, Full capability set)

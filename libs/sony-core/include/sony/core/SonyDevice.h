@@ -59,6 +59,7 @@ public:
     void setAutoPowerOff(int index);
     void setSpeakToChat(bool enabled);
     void setAdaptiveVolume(bool enabled);
+    void reset();
 
 private:
     unsigned _refreshStep{0};

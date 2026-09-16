@@ -55,6 +55,12 @@ struct DeviceCapabilities
     bool wearSensor = false;
 
     bool multipoint = false;
+
+    // Confirmed by packet capture on the WH-1000XM5 only (opcode 0xf8 0x09 0x00
+    // under SYSTEM_SET_PARAM); left false elsewhere until verified per model,
+    // since this codebase has already seen opcodes mean different things
+    // across devices (0x22 is POWER_OFF on V1, BATTERY_GET on V2).
+    bool reset = false;
 };
 
 struct DeviceProfile

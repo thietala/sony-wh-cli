@@ -117,8 +117,13 @@ Bluetooth protocol, as implemented in `libs/sony-protocol`.
   (and a real background-service story to go with it, e.g. a Windows
   Service via the SCM). macOS already shares the Unix-socket code path but
   still needs that hardware testing pass.
-- Reset / factory reset is not implemented — the opcode hasn't been
-  reverse-engineered yet. Open an issue if you find it.
+- `reset` (`0xf8 0x09 0x00`, Sony's "Initialize headphone settings") is
+  confirmed working via packet capture and real-hardware testing, but only
+  on a WH-1000XM5 — every other model reports it as unsupported until
+  someone captures and confirms the opcode on that device too. A separate,
+  more destructive "factory reset" (full wipe / unpair, distinct from this
+  `reset`) is a different, still-unresearched opcode — open an issue if you
+  find it.
 
 ## License
 

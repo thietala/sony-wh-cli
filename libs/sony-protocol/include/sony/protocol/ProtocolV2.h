@@ -42,6 +42,8 @@ public:
     bool getAdaptiveVolume() override;
     void setAdaptiveVolume(bool enabled) override;
 
+    void reset() override;
+
 private:
     SonyProtocolSession& _session;
     std::mutex _mutex;

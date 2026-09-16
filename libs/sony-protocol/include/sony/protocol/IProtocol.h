@@ -42,6 +42,12 @@ public:
 
     virtual bool getAdaptiveVolume() = 0;
     virtual void setAdaptiveVolume(bool enabled) = 0;
+
+    // Initializes headphone settings (Sony's own wording for this action);
+    // the device disconnects shortly after. Confirmed working by packet
+    // capture and real-hardware testing on a WH-1000XM5 — only implemented
+    // where confirmed (see DeviceCapabilities::reset).
+    virtual void reset() = 0;
 };
 
 } // namespace sony::protocol

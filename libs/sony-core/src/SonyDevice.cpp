@@ -342,6 +342,20 @@ void SonyDevice::setAdaptiveVolume(bool enabled) {
     _dispatcher.dispatch(protocol::DeviceStateChanged{snapshot()});
 }
 
+void SonyDevice::reset() {
+    if (!_protocol) return;
+    // Unlike the other setters here, this is gated on the per-model
+    // capability flag (not just the protocol generation): the opcode is
+    // only confirmed on the WH-1000XM5, and a wrong guess here is far
+    // riskier than a mis-set toggle.
+    if (!_capabilities.reset)
+        throw SonyException(SonyErrorCode::Unsupported, "Reset opcode is unverified on this device model");
+    // No state to update afterward: the device disconnects on its own a
+    // few frames later, which DeviceService's normal reconnect/tick logic
+    // already detects and reflects.
+    _protocol->reset();
+}
+
 void SonyDevice::_markSuccess(const std::string& feature) {
     std::lock_guard lock(_stateMutex);
     _state.features[feature] = {"valid", protocol::stateTimestamp(), {}};

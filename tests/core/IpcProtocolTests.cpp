@@ -141,6 +141,9 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
 
         auto cmdApo = IpcProtocol::parseCommand("autopoweroff 3");
         CHECK(cmdApo.type == IpcCommandType::AutoPowerOff);
+
+        auto cmdReset = IpcProtocol::parseCommand("reset");
+        CHECK(cmdReset.type == IpcCommandType::Reset);
     }
 }
 
