@@ -93,7 +93,12 @@ git clone https://github.com/thietala/sony-wh-cli.git
 cd sony-wh-cli
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel
+sudo cmake --install build
 ```
+
+Installs `sony-wh-cli` and `sonyd` to `<prefix>/bin` (default prefix
+`/usr/local`; skip `sudo` if you passed
+`-DCMAKE_INSTALL_PREFIX=$HOME/.local` at configure time).
 
 ## Running tests
 
