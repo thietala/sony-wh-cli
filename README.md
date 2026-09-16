@@ -51,7 +51,7 @@ tests/                       Catch2 unit tests for the three libraries
 
 `libs/sony-transport/legacy/` holds the original Bluetooth connector
 implementations (Linux/BlueZ+D-Bus, macOS/IOBluetooth, Windows/WinRT) this
-project was built on.
+project was built on, originally written for sony-device-center.
 
 ## Building from source
 
