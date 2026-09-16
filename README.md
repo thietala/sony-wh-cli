@@ -4,11 +4,9 @@ A fast, scriptable command-line tool and C++20 library for controlling Sony
 WH/WF headphones and earbuds — Ambient Sound, Noise Cancelling, Equalizer,
 Clear Bass, DSEE, and battery status — over Bluetooth, without the mobile app.
 
-Everything needed to talk to the headphones lives in this repo — no Qt, no
-GUI dependency. `libs/sony-core`, `libs/sony-protocol`, and
-`libs/sony-transport` can also be dropped into another project (a status bar
-widget, a Quickshell/Wayland shell integration, etc.) independently of the
-CLI and daemon binaries.
+`libs/sony-core`, `libs/sony-protocol`, and `libs/sony-transport` can also be
+dropped into another project (a status bar widget, a Quickshell/Wayland
+shell integration, etc.) independently of the CLI and daemon binaries.
 
 ## Usage
 
