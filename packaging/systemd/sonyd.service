@@ -1,0 +1,11 @@
+[Unit]
+Description=sonyd - Sony headphone Bluetooth daemon
+
+[Service]
+Type=simple
+ExecStart=sonyd
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

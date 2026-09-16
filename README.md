@@ -37,11 +37,33 @@ Bluetooth session instead; it refuses to run alongside a live `sonyd`, since
 both would fight over the same connection. IPC is Unix-only, so on Windows
 `sonyd` isn't functional and `--direct` is the only option.
 
+### Running sonyd as a service (Linux)
+
+`cmake --install` also installs a `systemd --user` unit
+(`packaging/systemd/sonyd.service`) to `<prefix>/lib/systemd/user/`. If you
+installed to a prefix systemd's user unit search path covers (`/usr` or
+`/usr/local`), enable it with:
+
+```
+systemctl --user daemon-reload
+systemctl --user enable --now sonyd
+```
+
+At any other prefix, symlink the file into `~/.config/systemd/user/` first:
+
+```
+mkdir -p ~/.config/systemd/user
+ln -s <prefix>/lib/systemd/user/sonyd.service ~/.config/systemd/user/sonyd.service
+systemctl --user daemon-reload
+systemctl --user enable --now sonyd
+```
+
 ## Repository layout
 
 ```
 main.cpp                    the sony-wh-cli binary
 sonyd.cpp                   the sonyd background daemon binary
+packaging/systemd/           systemd --user unit for running sonyd as a service
 libs/sony-transport/         Bluetooth transport abstraction + platform connectors
 libs/sony-protocol/          Sony's binary protocol (V1 and V2), framing, device state
 libs/sony-core/              device service, IPC client/server, JSON protocol

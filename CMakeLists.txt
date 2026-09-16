@@ -43,3 +43,12 @@ endif()
 
 include(GNUInstallDirs)
 install(TARGETS sony-wh-cli sonyd RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+# systemd --user unit for running sonyd as a per-user background service.
+# Only wired up when installing into a prefix systemd's user unit search
+# path actually covers (/usr, /usr/local); at other prefixes the file is
+# still installed but the user must symlink it into ~/.config/systemd/user.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    install(FILES packaging/systemd/sonyd.service
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/systemd/user)
+endif()
