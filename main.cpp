@@ -116,7 +116,8 @@ void printEqualizerPresetList() {
 // pulled straight from EqualizerPresets.h instead of a hand-copied excerpt.
 void printCommandHelp(const std::string& command) {
     std::string cmd = command;
-    std::transform(cmd.begin(), cmd.end(), cmd.begin(), [](unsigned char c) { return std::tolower(c); });
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     if (cmd == "devices") {
         std::cout << "devices — list discovered paired Sony devices\n\n"
