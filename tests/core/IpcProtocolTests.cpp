@@ -298,7 +298,8 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(stcResp.success);
         CHECK(service.snapshot()->speakToChat == true);
 
-        // Raw (debug escape hatch): sends the exact bytes given, bypassing
+#ifdef SONY_ENABLE_RAW
+        // Raw (Debug builds only): sends the exact bytes given, bypassing
         // every capability check — used to test unconfirmed opcodes.
         auto rawResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw d8 d2 01 00"), service);
         CHECK(rawResp.success);
@@ -310,6 +311,15 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
 
         auto rawBadHexResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw zz"), service);
         CHECK_FALSE(rawBadHexResp.success);
+#else
+        // Every other build type must refuse raw and never touch the wire,
+        // even with a connected device and perfectly valid bytes.
+        auto sentBeforeRaw = transport->sentCount();
+        auto rawResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw d8 d2 01 00"), service);
+        CHECK_FALSE(rawResp.success);
+        CHECK(rawResp.message.find("Debug builds") != std::string::npos);
+        CHECK(transport->sentCount() == sentBeforeRaw);
+#endif
 
         // Adaptive Volume
         auto avResp = IpcProtocol::execute(IpcProtocol::parseCommand("adaptivevolume off"), service);
@@ -399,6 +409,19 @@ TEST_CASE("IpcServer connects on demand and yields the device when idle", "[core
         CHECK(resp.success);
         CHECK_FALSE(service->isConnected());
     }
+
+#ifndef SONY_ENABLE_RAW
+    SECTION("a refused raw command does not take the device") {
+        IpcServer server(service, socket.path);
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        auto resp = client.sendCommand("raw d8 d2 01 00", kCommandTimeout);
+        CHECK_FALSE(resp.success);
+        CHECK(resp.message.find("Debug builds") != std::string::npos);
+        CHECK_FALSE(service->isConnected());
+    }
+#endif
 
     SECTION("the device is released after being idle") {
         IpcServer server(service, socket.path, std::chrono::milliseconds(500));

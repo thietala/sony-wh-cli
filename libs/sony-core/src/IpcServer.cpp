@@ -87,6 +87,11 @@ bool commandNeedsConnection(const std::string& line) {
     if (start != std::string::npos && (line[start] == '{' || line[start] == '['))
         return false; // JSON clients manage connect/disconnect explicitly.
     auto type = IpcProtocol::parseCommand(line).type;
+#ifndef SONY_ENABLE_RAW
+    // Refused without touching the device (see IpcProtocol::execute), so it
+    // shouldn't take the Bluetooth link from the phone just to say no.
+    if (type == IpcCommandType::Raw) return false;
+#endif
     return type != IpcCommandType::Devices && type != IpcCommandType::Status;
 }
 }

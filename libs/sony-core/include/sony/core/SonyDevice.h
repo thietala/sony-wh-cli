@@ -63,10 +63,12 @@ public:
     void reset();
     void factoryReset();
 
-    // Debug escape hatch for reverse-engineering: sends an arbitrary MDR
-    // payload as-is, bypassing IProtocol and every capability check. Not
-    // exposed anywhere near the normal command set — see sendRaw's callers.
+#ifdef SONY_ENABLE_RAW
+    // Debug-build-only escape hatch for reverse-engineering: sends an
+    // arbitrary MDR payload as-is, bypassing IProtocol and every capability
+    // check. Compiled out entirely in every other build type.
     void sendRaw(const std::vector<uint8_t>& payload);
+#endif
 
 private:
     unsigned _refreshStep{0};

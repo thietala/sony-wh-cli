@@ -166,6 +166,16 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         return resp;
     }
 
+#ifndef SONY_ENABLE_RAW
+    // Refuse before the device checks below so a Release build says why,
+    // rather than "No device connected".
+    if (cmd.type == IpcCommandType::Raw) {
+        resp.success = false;
+        resp.message = "raw is only available in Debug builds (rebuild sonyd with -DCMAKE_BUILD_TYPE=Debug)";
+        return resp;
+    }
+#endif
+
     auto* dev = service.activeDevice();
     if (cmd.type == IpcCommandType::Status) {
         resp.success = service.isConnected();
@@ -388,9 +398,10 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             return resp;
         }
 
-        // Debug escape hatch: send arbitrary hex bytes as an MDR payload,
-        // bypassing every capability check. For reverse-engineering an
-        // opcode before it gets a real implementation — not a supported
+#ifdef SONY_ENABLE_RAW
+        // Debug-build-only escape hatch: send arbitrary hex bytes as an MDR
+        // payload, bypassing every capability check. For reverse-engineering
+        // an opcode before it gets a real implementation — not a supported
         // command, deliberately undocumented in --help.
         case IpcCommandType::Raw: {
             if (cmd.args.empty()) {
@@ -417,6 +428,7 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             resp.message = "Raw payload sent";
             return resp;
         }
+#endif
 
         default:
             resp.success = false;
