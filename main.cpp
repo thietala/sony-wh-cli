@@ -9,12 +9,20 @@
 
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
+#include <cstdio>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 using namespace sony;
 using namespace sony::core;
@@ -22,6 +30,35 @@ using namespace sony::protocol;
 using namespace sony::transport;
 
 namespace {
+
+bool stdinIsInteractive() {
+#ifdef _WIN32
+    return _isatty(_fileno(stdin)) != 0;
+#else
+    return isatty(STDIN_FILENO) != 0;
+#endif
+}
+
+// Asks the human before a destructive command runs. --yes (assumeYes) is the
+// explicit non-interactive override for scripts; with no terminal to ask and
+// no --yes, refuse rather than guess.
+bool confirmDestructive(const std::string& warning, bool assumeYes) {
+    if (assumeYes) return true;
+    if (!stdinIsInteractive()) {
+        std::cerr << "Error: " << warning << "\n"
+                  << "This must be confirmed, and stdin is not a terminal. Pass --yes to confirm.\n";
+        return false;
+    }
+    std::cerr << "WARNING: " << warning << "\nContinue? [y/N] " << std::flush;
+    std::string answer;
+    if (!std::getline(std::cin, answer)) return false;
+    auto first = answer.find_first_not_of(" \t\r\n");
+    auto last = answer.find_last_not_of(" \t\r\n");
+    answer = first == std::string::npos ? std::string{} : answer.substr(first, last - first + 1);
+    std::transform(answer.begin(), answer.end(), answer.begin(),
+                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    return answer == "y" || answer == "yes";
+}
 
 void printHelp() {
     std::cout << "sony-wh-cli — CLI diagnostic and control tool for Sony audio devices\n\n"
@@ -44,9 +81,13 @@ void printHelp() {
               << "  reset                      Initialize headphone settings (disconnects the\n"
               << "                             device; confirmed on WH-1000XM5 only)\n"
               << "  factoryreset               DESTRUCTIVE: wipes the pairing itself; headphones\n"
-              << "                             must be re-paired afterward (WH-1000XM5 only)\n\n"
+              << "                             must be re-paired afterward (WH-1000XM5 only).\n"
+              << "                             Asks for confirmation; see --yes\n\n"
               << "Options:\n"
               << "  -s, --socket <path>        Custom Unix domain socket path for sonyd\n"
+              << "  --yes                      Confirm a destructive command (factoryreset)\n"
+              << "                             without prompting; required when not run from a\n"
+              << "                             terminal, e.g. in a script\n"
               << "  --direct                   Bypass sonyd for a one-off direct Bluetooth\n"
               << "                             session (refuses to run alongside a live sonyd)\n"
               << "  -v, --verbose              Enable verbose diagnostic logging\n"
@@ -142,11 +183,15 @@ void printCommandHelp(const std::string& command) {
                   << "guessing.\n";
     } else if (cmd == "factoryreset") {
         std::cout << "factoryreset — DESTRUCTIVE: factory reset\n\n"
-                  << "Usage: sony-wh-cli factoryreset\n\n"
+                  << "Usage: sony-wh-cli [--yes] factoryreset\n\n"
                   << "Wipes the pairing itself, not just settings. The headphones will\n"
                   << "need to be re-paired from your device's Bluetooth settings\n"
                   << "afterward. Confirmed on WH-1000XM5 only — refuses on other models\n"
-                  << "rather than guessing.\n";
+                  << "rather than guessing.\n\n"
+                  << "Asks for confirmation first and aborts unless you answer y or yes.\n"
+                  << "--yes skips the prompt, and is required when stdin is not a terminal\n"
+                  << "(scripts, pipes). sonyd refuses an unconfirmed factoryreset from any\n"
+                  << "client, so skipping the CLI does not skip the check.\n";
     } else {
         std::cout << "No detailed help for '" << command << "'.\n"
                   << "Run `sony-wh-cli --help` for the list of commands.\n";
@@ -160,6 +205,7 @@ int main(int argc, char* argv[]) {
     bool direct = false;
     bool verbose = false;
     bool helpRequested = false;
+    bool assumeYes = false;
     std::vector<std::string> commandTokens;
 
     for (int i = 1; i < argc; ++i) {
@@ -168,6 +214,8 @@ int main(int argc, char* argv[]) {
             helpRequested = true;
         } else if ((arg == "-s" || arg == "--socket") && i + 1 < argc) {
             socketPath = argv[++i];
+        } else if (arg == kConfirmArg) {
+            assumeYes = true;
         } else if (arg == "--direct") {
             direct = true;
         } else if (arg == "-v" || arg == "--verbose") {
@@ -216,12 +264,27 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (!direct) {
-        if (!daemonRunning) {
-            std::cerr << "Error: sonyd is not running at " << socketPath << "\n"
-                      << "Start it with `sonyd`, or pass --direct for a one-off direct Bluetooth session.\n";
+    if (!direct && !daemonRunning) {
+        std::cerr << "Error: sonyd is not running at " << socketPath << "\n"
+                  << "Start it with `sonyd`, or pass --direct for a one-off direct Bluetooth session.\n";
+        return 1;
+    }
+
+    // Destructive commands need an explicit yes before anything is sent, on
+    // both the daemon and --direct paths. Only after the human confirms is the
+    // token added that the daemon (and IpcProtocol::execute) insist on, so a
+    // client that skips this prompt is still refused there.
+    if (IpcProtocol::needsConfirmation(IpcProtocol::parseCommand(commandLine))) {
+        if (!confirmDestructive("factoryreset wipes the pairing itself; the headphones must be re-paired afterward.",
+                                assumeYes)) {
+            std::cerr << "Aborted; nothing was sent.\n";
             return 1;
         }
+        commandLine += " ";
+        commandLine += kConfirmArg;
+    }
+
+    if (!direct) {
         // sonyd connects to the headphones on demand rather than holding the
         // link permanently (see IpcServer), so the first command after an
         // idle period pays for a fresh Bluetooth connection here.

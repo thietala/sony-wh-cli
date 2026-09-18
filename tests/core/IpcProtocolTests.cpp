@@ -173,6 +173,13 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
 
         auto cmdFactoryReset = IpcProtocol::parseCommand("factoryreset");
         CHECK(cmdFactoryReset.type == IpcCommandType::FactoryReset);
+
+        // Only factoryreset is destructive, and only --yes (any case) confirms it.
+        CHECK(IpcProtocol::needsConfirmation(cmdFactoryReset));
+        CHECK(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset now")));
+        CHECK_FALSE(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset --yes")));
+        CHECK_FALSE(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("FACTORYRESET --YES")));
+        CHECK_FALSE(IpcProtocol::needsConfirmation(cmdReset));
     }
 }
 
@@ -226,6 +233,12 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         auto resp = IpcProtocol::execute(cmd, service);
         CHECK_FALSE(resp.success);
         CHECK(resp.message == "No device connected");
+    }
+
+    SECTION("an unconfirmed factory reset says so instead of reporting no device") {
+        auto resp = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset"), service);
+        CHECK_FALSE(resp.success);
+        CHECK(resp.message.find("--yes") != std::string::npos);
     }
 
     SECTION("connected device executes commands") {
@@ -326,6 +339,19 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(avResp.success);
         CHECK(service.snapshot()->adaptiveVolume == false);
 
+        // Factory reset wipes the pairing, so it is refused without --yes and
+        // the refusal must never reach the wire, even on a connected XM5.
+        auto sentBeforeFactoryReset = transport->sentCount();
+        auto frRefused = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset"), service);
+        CHECK_FALSE(frRefused.success);
+        CHECK(frRefused.message.find("--yes") != std::string::npos);
+        CHECK(transport->sentCount() == sentBeforeFactoryReset);
+
+        auto frConfirmed = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset --yes"), service);
+        CHECK(frConfirmed.success);
+        auto frSent = FrameCodec::decode(transport->lastSentFrame());
+        CHECK(frSent.payload == std::vector<uint8_t>{0xf8, 0x09, 0x01});
+
         service.disconnect();
         CHECK_FALSE(service.isConnected());
     }
@@ -407,6 +433,17 @@ TEST_CASE("IpcServer connects on demand and yields the device when idle", "[core
 
         auto resp = client.sendCommand("devices", kCommandTimeout);
         CHECK(resp.success);
+        CHECK_FALSE(service->isConnected());
+    }
+
+    SECTION("an unconfirmed factory reset does not take the device") {
+        IpcServer server(service, socket.path);
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        auto resp = client.sendCommand("factoryreset", kCommandTimeout);
+        CHECK_FALSE(resp.success);
+        CHECK(resp.message.find("--yes") != std::string::npos);
         CHECK_FALSE(service->isConnected());
     }
 

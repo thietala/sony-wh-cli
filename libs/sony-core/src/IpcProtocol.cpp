@@ -150,6 +150,12 @@ IpcResponse IpcProtocol::parseResponse(std::string_view line) {
     return resp;
 }
 
+bool IpcProtocol::needsConfirmation(const IpcCommand& cmd) {
+    if (cmd.type != IpcCommandType::FactoryReset) return false;
+    return std::none_of(cmd.args.begin(), cmd.args.end(),
+        [](const std::string& arg) { return toLower(arg) == kConfirmArg; });
+}
+
 IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service) {
     IpcResponse resp;
 
@@ -163,6 +169,14 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         resp.success = true;
         resp.message = std::to_string(devs.size()) + " devices found";
         resp.data = oss.str();
+        return resp;
+    }
+
+    // Refuse before the device checks below: an unconfirmed factory reset must
+    // never reach the device, and should say why rather than "No device connected".
+    if (needsConfirmation(cmd)) {
+        resp.success = false;
+        resp.message = "factoryreset wipes the pairing and must be confirmed explicitly (pass --yes)";
         return resp;
     }
 

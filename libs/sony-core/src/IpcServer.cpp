@@ -86,7 +86,12 @@ bool commandNeedsConnection(const std::string& line) {
     auto start = line.find_first_not_of(" \r\t");
     if (start != std::string::npos && (line[start] == '{' || line[start] == '['))
         return false; // JSON clients manage connect/disconnect explicitly.
-    auto type = IpcProtocol::parseCommand(line).type;
+    auto cmd = IpcProtocol::parseCommand(line);
+    auto type = cmd.type;
+    // An unconfirmed factory reset is refused without touching the device
+    // (see IpcProtocol::execute), so it must not take the Bluetooth link from
+    // the phone just to say no.
+    if (IpcProtocol::needsConfirmation(cmd)) return false;
 #ifndef SONY_ENABLE_RAW
     // Refused without touching the device (see IpcProtocol::execute), so it
     // shouldn't take the Bluetooth link from the phone just to say no.
