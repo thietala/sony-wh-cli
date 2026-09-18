@@ -1,0 +1,13 @@
+{
+    "files.associations": {
+        "*.h": "cpp"
+    },
+    "search.exclude": {
+        "**/build": true,
+        "**/build-*": true
+    },
+    "files.watcherExclude": {
+        "**/build/**": true,
+        "**/build-*/**": true
+    }
+}
