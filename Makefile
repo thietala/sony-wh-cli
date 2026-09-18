@@ -9,12 +9,13 @@ BUILD_TYPE ?= Release
 
 all: build
 
-# Only reconfigures when build/ doesn't exist yet, so `make`/`make build`
-# stays fast on repeat runs. Force a reconfigure with `make clean configure`.
-$(BUILD_DIR)/CMakeCache.txt:
+# Phony on purpose: it runs every time, so BUILD_TYPE / BUILD_DIR given on the
+# command line always take effect (`make BUILD_TYPE=Debug` on an existing Release
+# tree really switches it). Re-running cmake is cheap, leaves cache settings you
+# did not name alone (e.g. CMAKE_EXPORT_COMPILE_COMMANDS), and only rebuilds
+# what a changed setting affects.
+configure:
 	cmake -B $(BUILD_DIR) -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -DBUILD_TESTING=ON
-
-configure: $(BUILD_DIR)/CMakeCache.txt
 
 build: configure
 	cmake --build $(BUILD_DIR) --parallel
@@ -33,8 +34,9 @@ clean:
 
 help:
 	@echo "Targets:"
-	@echo "  make [build]        configure (if needed) and build"
-	@echo "  make configure      configure only (skips if already configured)"
+	@echo "  make [build]        configure, then build"
+	@echo "  make configure      (re)configure only; BUILD_TYPE=Debug|Release (default Release)"
+	@echo "                      and BUILD_DIR=<dir> apply every time"
 	@echo "  sudo make install   install the built binaries (run 'make build' first)"
 	@echo "  make test           build, then run the test suite"
 	@echo "  make clean          remove the build directory"
