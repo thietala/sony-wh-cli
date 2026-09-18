@@ -322,6 +322,11 @@ void SonyDevice::setAutoPowerOff(int index) {
 
 void SonyDevice::setSpeakToChat(bool enabled) {
     if (!_protocol) return;
+    // Per-model capability, not just protocol generation: V2 includes models
+    // without the feature, and this would otherwise still send the opcode and
+    // record a state the device never had.
+    if (!_capabilities.speakToChat)
+        throw SonyException(SonyErrorCode::Unsupported, "Speak-to-Chat is not supported by this device model");
     _protocol->setSpeakToChat(enabled);
     {
         std::lock_guard lock(_stateMutex);
@@ -333,6 +338,8 @@ void SonyDevice::setSpeakToChat(bool enabled) {
 
 void SonyDevice::setAdaptiveVolume(bool enabled) {
     if (!_protocol) return;
+    if (!_capabilities.adaptiveVolume)
+        throw SonyException(SonyErrorCode::Unsupported, "Adaptive Volume is not supported by this device model");
     _protocol->setAdaptiveVolume(enabled);
     {
         std::lock_guard lock(_stateMutex);

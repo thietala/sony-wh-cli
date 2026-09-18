@@ -235,6 +235,22 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(resp.message == "No device connected");
     }
 
+    SECTION("speak-to-chat and adaptive volume are refused on a model without them") {
+        service.connect(DeviceAddress("11:22:33:44:55:66"), "WH-CH720N");
+        REQUIRE(service.isConnected());
+
+        const auto sent = transport->sentCount();
+        for (const auto* line : {"speaktochat on", "adaptivevolume on"}) {
+            auto resp = IpcProtocol::execute(IpcProtocol::parseCommand(line), service);
+            INFO(line);
+            CHECK_FALSE(resp.success);
+            CHECK(resp.message.find("not supported") != std::string::npos);
+        }
+        CHECK(transport->sentCount() == sent);
+        CHECK(service.snapshot()->speakToChat == false);
+        CHECK(service.snapshot()->adaptiveVolume == false);
+    }
+
     SECTION("an unconfirmed factory reset says so instead of reporting no device") {
         auto resp = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset"), service);
         CHECK_FALSE(resp.success);

@@ -136,6 +136,49 @@ TEST_CASE("SonyDevice gates reset to models with a confirmed opcode", "[core][de
     CHECK(otherTransport->sentCount() == sentBeforeReset);
 }
 
+TEST_CASE("SonyDevice refuses speak-to-chat and adaptive volume on models without them", "[core][device]") {
+    // True only if fn() throws the Unsupported error (not some other failure).
+    auto unsupported = [](auto&& fn) {
+        try { fn(); } catch (const SonyException& ex) { return ex.code() == SonyErrorCode::Unsupported; }
+        return false;
+    };
+
+    SECTION("each feature is checked against its own capability flag") {
+        // WF-1000XM4 has Speak-to-Chat but not Adaptive Volume, so a check that
+        // accepted "either" flag would let the second call through.
+        auto transport = std::make_shared<AutoAckFakeTransport>();
+        SonyDevice buds(transport, SonyProtocolVersion::V2);
+        buds.connect(DeviceAddress("11:22:33:44:55:66"), "WF-1000XM4");
+        REQUIRE(buds.capabilities().speakToChat);
+        REQUIRE_FALSE(buds.capabilities().adaptiveVolume);
+
+        auto sent = transport->sentCount();
+        REQUIRE_NOTHROW(buds.setSpeakToChat(true));
+        CHECK(transport->sentCount() > sent);
+        CHECK(buds.snapshot()->speakToChat == true);
+
+        sent = transport->sentCount();
+        CHECK(unsupported([&] { buds.setAdaptiveVolume(true); }));
+        CHECK(transport->sentCount() == sent);           // nothing reached the wire
+        CHECK(buds.snapshot()->adaptiveVolume == false); // local state untouched
+    }
+
+    SECTION("a model with neither feature refuses both") {
+        auto transport = std::make_shared<AutoAckFakeTransport>();
+        SonyDevice headphones(transport, SonyProtocolVersion::V2);
+        headphones.connect(DeviceAddress("22:33:44:55:66:77"), "WH-CH720N");
+        REQUIRE_FALSE(headphones.capabilities().speakToChat);
+        REQUIRE_FALSE(headphones.capabilities().adaptiveVolume);
+
+        const auto sent = transport->sentCount();
+        CHECK(unsupported([&] { headphones.setSpeakToChat(true); }));
+        CHECK(unsupported([&] { headphones.setAdaptiveVolume(true); }));
+        CHECK(transport->sentCount() == sent);
+        CHECK(headphones.snapshot()->speakToChat == false);
+        CHECK(headphones.snapshot()->adaptiveVolume == false);
+    }
+}
+
 TEST_CASE("SonyDevice control methods and state updates", "[core][device]") {
     auto transport = std::make_shared<AutoAckFakeTransport>();
     SonyDevice dev(transport, SonyProtocolVersion::V2);
