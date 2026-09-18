@@ -322,6 +322,11 @@ void SonyDevice::setAutoPowerOff(int index) {
 
 void SonyDevice::setSpeakToChat(bool enabled) {
     if (!_protocol) return;
+    // Per-model capability, not just protocol generation: V2 includes models
+    // without the feature, and this would otherwise still send the opcode and
+    // record a state the device never had.
+    if (!_capabilities.speakToChat)
+        throw SonyException(SonyErrorCode::Unsupported, "Speak-to-Chat is not supported by this device model");
     _protocol->setSpeakToChat(enabled);
     {
         std::lock_guard lock(_stateMutex);
@@ -333,6 +338,8 @@ void SonyDevice::setSpeakToChat(bool enabled) {
 
 void SonyDevice::setAdaptiveVolume(bool enabled) {
     if (!_protocol) return;
+    if (!_capabilities.adaptiveVolume)
+        throw SonyException(SonyErrorCode::Unsupported, "Adaptive Volume is not supported by this device model");
     _protocol->setAdaptiveVolume(enabled);
     {
         std::lock_guard lock(_stateMutex);
@@ -355,6 +362,22 @@ void SonyDevice::reset() {
     // already detects and reflects.
     _protocol->reset();
 }
+
+void SonyDevice::factoryReset() {
+    if (!_protocol) return;
+    // Same reasoning as reset(), but more so: this wipes the pairing
+    // itself, so an unconfirmed guess here is worse than unsupported.
+    if (!_capabilities.factoryReset)
+        throw SonyException(SonyErrorCode::Unsupported, "Factory reset opcode is unverified on this device model");
+    _protocol->factoryReset();
+}
+
+#ifdef SONY_ENABLE_RAW
+void SonyDevice::sendRaw(const std::vector<uint8_t>& payload) {
+    if (!_session) return;
+    _session->send(protocol::SonyFrame{ .type = protocol::DataType::DataMdr, .payload = payload });
+}
+#endif
 
 void SonyDevice::_markSuccess(const std::string& feature) {
     std::lock_guard lock(_stateMutex);

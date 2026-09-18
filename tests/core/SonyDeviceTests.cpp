@@ -39,6 +39,7 @@ public:
                     // Auto-respond to known inquiry requests
                     if (!frame.payload.empty()) {
                         uint8_t op = frame.payload[0];
+                        uint8_t subtype = frame.payload.size() > 1 ? frame.payload[1] : 0x00;
                         if (op == 0x00) { // Init query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
@@ -46,10 +47,13 @@ public:
                                 .payload = {0x01, 0x00}
                             }));
                         } else if (op == 0x22) { // Battery query
+                            // Echo the requested subtype (main/dual/case) so
+                            // every sub-query matches immediately instead of
+                            // burning its 1s sendAndAwaitResponse timeout.
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
                                 .sequence = _nextRespSeq(),
-                                .payload = {0x23, 0x00, 85, 0x00}
+                                .payload = {0x23, subtype, 85, 0x00}
                             }));
                         } else if (op == 0x66) { // NC query
                             queueIncoming(FrameCodec::encode(SonyFrame{
@@ -105,6 +109,7 @@ TEST_CASE("SonyDevice lifecycle and profile identification", "[core][device]") {
     CHECK(dev.capabilities().dsee);
     CHECK(dev.capabilities().speakToChat);
     CHECK(dev.capabilities().reset);
+    CHECK(dev.capabilities().factoryReset);
 
     dev.disconnect();
     CHECK_FALSE(dev.isConnected());
@@ -116,6 +121,7 @@ TEST_CASE("SonyDevice gates reset to models with a confirmed opcode", "[core][de
     SonyDevice xm5(transport, SonyProtocolVersion::V2);
     xm5.connect(DeviceAddress("11:22:33:44:55:66"), "WH-1000XM5");
     REQUIRE_NOTHROW(xm5.reset());
+    REQUIRE_NOTHROW(xm5.factoryReset());
 
     // Same V2 protocol, but reset hasn't been confirmed on this model, so
     // SonyDevice must refuse before ever touching the wire.
@@ -123,9 +129,54 @@ TEST_CASE("SonyDevice gates reset to models with a confirmed opcode", "[core][de
     SonyDevice xm5buds(otherTransport, SonyProtocolVersion::V2);
     xm5buds.connect(DeviceAddress("22:33:44:55:66:77"), "WF-1000XM5");
     CHECK_FALSE(xm5buds.capabilities().reset);
+    CHECK_FALSE(xm5buds.capabilities().factoryReset);
     auto sentBeforeReset = otherTransport->sentCount();
     REQUIRE_THROWS_AS(xm5buds.reset(), SonyException);
+    REQUIRE_THROWS_AS(xm5buds.factoryReset(), SonyException);
     CHECK(otherTransport->sentCount() == sentBeforeReset);
+}
+
+TEST_CASE("SonyDevice refuses speak-to-chat and adaptive volume on models without them", "[core][device]") {
+    // True only if fn() throws the Unsupported error (not some other failure).
+    auto unsupported = [](auto&& fn) {
+        try { fn(); } catch (const SonyException& ex) { return ex.code() == SonyErrorCode::Unsupported; }
+        return false;
+    };
+
+    SECTION("each feature is checked against its own capability flag") {
+        // WF-1000XM4 has Speak-to-Chat but not Adaptive Volume, so a check that
+        // accepted "either" flag would let the second call through.
+        auto transport = std::make_shared<AutoAckFakeTransport>();
+        SonyDevice buds(transport, SonyProtocolVersion::V2);
+        buds.connect(DeviceAddress("11:22:33:44:55:66"), "WF-1000XM4");
+        REQUIRE(buds.capabilities().speakToChat);
+        REQUIRE_FALSE(buds.capabilities().adaptiveVolume);
+
+        auto sent = transport->sentCount();
+        REQUIRE_NOTHROW(buds.setSpeakToChat(true));
+        CHECK(transport->sentCount() > sent);
+        CHECK(buds.snapshot()->speakToChat == true);
+
+        sent = transport->sentCount();
+        CHECK(unsupported([&] { buds.setAdaptiveVolume(true); }));
+        CHECK(transport->sentCount() == sent);           // nothing reached the wire
+        CHECK(buds.snapshot()->adaptiveVolume == false); // local state untouched
+    }
+
+    SECTION("a model with neither feature refuses both") {
+        auto transport = std::make_shared<AutoAckFakeTransport>();
+        SonyDevice headphones(transport, SonyProtocolVersion::V2);
+        headphones.connect(DeviceAddress("22:33:44:55:66:77"), "WH-CH720N");
+        REQUIRE_FALSE(headphones.capabilities().speakToChat);
+        REQUIRE_FALSE(headphones.capabilities().adaptiveVolume);
+
+        const auto sent = transport->sentCount();
+        CHECK(unsupported([&] { headphones.setSpeakToChat(true); }));
+        CHECK(unsupported([&] { headphones.setAdaptiveVolume(true); }));
+        CHECK(transport->sentCount() == sent);
+        CHECK(headphones.snapshot()->speakToChat == false);
+        CHECK(headphones.snapshot()->adaptiveVolume == false);
+    }
 }
 
 TEST_CASE("SonyDevice control methods and state updates", "[core][device]") {

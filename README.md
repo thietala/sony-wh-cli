@@ -100,6 +100,11 @@ Installs `sony-wh-cli` and `sonyd` to `<prefix>/bin` (default prefix
 `/usr/local`; skip `sudo` if you passed
 `-DCMAKE_INSTALL_PREFIX=$HOME/.local` at configure time).
 
+On Linux/macOS, a `Makefile` at the repo root wraps the above for less
+typing: `make` (configure + build), `sudo make install`, `make clean`.
+Run `make help` for the full list. It's a convenience wrapper only — CI
+and Windows still use CMake directly.
+
 ## Running tests
 
 ```
@@ -122,13 +127,12 @@ Bluetooth protocol, as implemented in `libs/sony-protocol`.
   (and a real background-service story to go with it, e.g. a Windows
   Service via the SCM). macOS already shares the Unix-socket code path but
   still needs that hardware testing pass.
-- `reset` (`0xf8 0x09 0x00`, Sony's "Initialize headphone settings") is
-  confirmed working via packet capture and real-hardware testing, but only
-  on a WH-1000XM5 — every other model reports it as unsupported until
-  someone captures and confirms the opcode on that device too. A separate,
-  more destructive "factory reset" (full wipe / unpair, distinct from this
-  `reset`) is a different, still-unresearched opcode — open an issue if you
-  find it.
+- `reset` (`0xf8 0x09 0x00`, Sony's "Initialize headphone settings") and
+  `factoryreset` (`0xf8 0x09 0x01` — same sub-type, wipes the pairing
+  itself and requires re-pairing) are both confirmed working via packet
+  capture and real-hardware testing, but only on a WH-1000XM5 — every
+  other model reports both as unsupported until someone captures and
+  confirms the opcodes on that device too.
 
 ## License
 
