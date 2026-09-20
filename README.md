@@ -14,13 +14,44 @@ shell integration, etc.) independently of the CLI and daemon binaries.
 sony-wh-cli devices
 sony-wh-cli info
 sony-wh-cli battery
-sony-wh-cli anc on
-sony-wh-cli ambient 10
-sony-wh-cli eq preset bass-boost
-sony-wh-cli dsee on
+sony-wh-cli eq preset vocal
 ```
 
-Run `sony-wh-cli --help` for the full command list.
+### Commands
+
+```
+sony-wh-cli
+├── devices                    List discovered paired Sony devices
+├── info                       Display connected device info & capabilities
+├── battery                    Display battery percentage and charging state
+├── status                     Display connection status
+├── anc <on|off>               Enable or disable Active Noise Cancelling
+├── ambient <1-20>|off         Set Ambient Sound level, or turn it off
+├── eq
+│   ├── get                    Show the active preset and band levels
+│   ├── preset <name>          Set a preset by name: off, bright, excited,
+│   │                          mellow, relaxed, vocal, treble-boost,
+│   │                          bass-boost, speech, manual
+│   ├── <name>                 Shorthand for `eq preset <name>`
+│   └── custom <cb> <b1..b5>   Custom Clear Bass + 5 bands (each -10..10)
+├── dsee <on|off>              Toggle DSEE sound enhancement
+├── apo <0-5>                  Set Auto-Power-Off duration (0=off .. 5=when taken off)
+├── speaktochat <on|off>       Toggle Speak-to-Chat auto-pause
+├── adaptivevolume <on|off>    Toggle Adaptive Volume
+├── reset                      Initialize headphone settings (WH-1000XM5 only)
+├── factoryreset               DESTRUCTIVE: wipes the pairing itself (WH-1000XM5 only)
+└── help <command>             Show detailed help for a command
+
+Options:
+  -s, --socket <path>   Custom Unix domain socket path for sonyd
+  --yes                 Confirm a destructive command without prompting
+  --direct              Bypass sonyd for a one-off direct Bluetooth session
+  -v, --verbose         Enable verbose diagnostic logging
+  -h, --help            Show this help (or detailed help after a command)
+```
+
+Run `sony-wh-cli --help` for the same list from the binary itself, or
+`sony-wh-cli help <command>` for a command's detailed help.
 
 `sony-wh-cli` is a thin client: it requires `sonyd` to be running and talks
 to it over a local IPC socket, so any number of callers (this CLI, a status
