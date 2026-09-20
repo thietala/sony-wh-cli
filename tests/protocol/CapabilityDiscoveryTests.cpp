@@ -9,8 +9,8 @@
 using namespace sony::protocol;
 using namespace sony::transport;
 
-TEST_CASE("CapabilityDiscovery: known devices resolve immediately via registry without probing", "[protocol][capabilities]")
-{
+TEST_CASE("CapabilityDiscovery: known devices resolve immediately via registry without probing",
+    "[protocol][capabilities]") {
     FakeTransport fake;
     SonyProtocolSession session(&fake);
     session.connect("11:22:33:44:55:66");
@@ -35,8 +35,8 @@ TEST_CASE("CapabilityDiscovery: known devices resolve immediately via registry w
     REQUIRE(fake.sentCount() == 0);
 }
 
-TEST_CASE("CapabilityDiscovery: unknown device probes and populates cache", "[protocol][capabilities]")
-{
+TEST_CASE(
+    "CapabilityDiscovery: unknown device probes and populates cache", "[protocol][capabilities]") {
     FakeTransport fake;
     SonyProtocolSession session(&fake);
     session.connect("11:22:33:44:55:66");
@@ -47,16 +47,22 @@ TEST_CASE("CapabilityDiscovery: unknown device probes and populates cache", "[pr
 
     // Fake an unknown device: queue responses for FW, battery, and DSEE
     // 1. FW
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::Ack, .sequence = 0 }));
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::DataMdr, .sequence = 1, .payload = {0x05, 0x02, 0x00, '1', '.', '0'} }));
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 0}));
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{
+        .type = DataType::DataMdr, .sequence = 1, .payload = {0x05, 0x02, 0x00, '1', '.', '0'}
+    }));
     // 2. Battery
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::Ack, .sequence = 1 }));
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::DataMdr, .sequence = 0, .payload = {0x23, 0x00, 90, 0} }));
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 1}));
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{
+        .type = DataType::DataMdr, .sequence = 0, .payload = {0x23, 0x00, 90, 0}
+    }));
     // 3. Noise Control (timeout or fails)
     // 4. Equalizer (timeout)
     // 5. DSEE
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::Ack, .sequence = 2 }));
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{ .type = DataType::DataMdr, .sequence = 1, .payload = {0xe7, 0x01, 0x01} }));
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 2}));
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{
+        .type = DataType::DataMdr, .sequence = 1, .payload = {0xe7, 0x01, 0x01}
+    }));
 
     auto caps = discovery.probeDevice(proto, SonyModel::Unknown, "AA:BB:CC:DD:EE:FF");
     REQUIRE(caps.firmwareInfo == true);
@@ -72,8 +78,7 @@ TEST_CASE("CapabilityDiscovery: unknown device probes and populates cache", "[pr
     REQUIRE(cached->dsee == true);
 }
 
-TEST_CASE("CapabilityDiscovery: discoverAsync runs non-blocking", "[protocol][capabilities]")
-{
+TEST_CASE("CapabilityDiscovery: discoverAsync runs non-blocking", "[protocol][capabilities]") {
     FakeTransport fake;
     SonyProtocolSession session(&fake);
     session.connect("11:22:33:44:55:66");
@@ -90,8 +95,7 @@ TEST_CASE("CapabilityDiscovery: discoverAsync runs non-blocking", "[protocol][ca
     REQUIRE(caps.equalizer == true);
 }
 
-TEST_CASE("CapabilityCache: persistence to file", "[protocol][capabilities]")
-{
+TEST_CASE("CapabilityCache: persistence to file", "[protocol][capabilities]") {
     auto tempPath = std::filesystem::temp_directory_path() / "test_sony_caps_cache.txt";
 
     {

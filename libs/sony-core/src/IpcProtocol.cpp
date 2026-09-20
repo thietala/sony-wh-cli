@@ -38,19 +38,16 @@ std::string toLower(std::string_view s) {
     return res;
 }
 
-int parsePresetName(std::string_view name) {
-    return protocol::equalizerPresetFromName(name);
-}
+int parsePresetName(std::string_view name) { return protocol::equalizerPresetFromName(name); }
 
-std::string presetToString(int preset) {
-    return protocol::equalizerPresetName(preset);
-}
+std::string presetToString(int preset) { return protocol::equalizerPresetName(preset); }
 
 } // namespace
 
 std::string IpcProtocol::executeLine(std::string_view line, IDeviceService& service) {
     auto start = line.find_first_not_of(" \r\t");
-    if (start != std::string_view::npos && (line[start] == '{' || line[start] == '[')) return JsonProtocol::executeLine(line, service);
+    if (start != std::string_view::npos && (line[start] == '{' || line[start] == '['))
+        return JsonProtocol::executeLine(line, service);
     return serializeResponse(execute(parseCommand(line), service));
 }
 
@@ -114,9 +111,8 @@ std::string IpcProtocol::serializeResponse(const IpcResponse& response) {
         if (c == '\n') c = '\x1e';
     }
     std::ostringstream oss;
-    oss << (response.success ? "OK" : "ERR") << "|"
-        << response.message << "|"
-        << encodedData << "\n";
+    oss << (response.success ? "OK" : "ERR") << "|" << response.message << "|" << encodedData
+        << "\n";
     return oss.str();
 }
 
@@ -152,8 +148,9 @@ IpcResponse IpcProtocol::parseResponse(std::string_view line) {
 
 bool IpcProtocol::needsConfirmation(const IpcCommand& cmd) {
     if (cmd.type != IpcCommandType::FactoryReset) return false;
-    return std::none_of(cmd.args.begin(), cmd.args.end(),
-        [](const std::string& arg) { return toLower(arg) == kConfirmArg; });
+    return std::none_of(cmd.args.begin(), cmd.args.end(), [](const std::string& arg) {
+        return toLower(arg) == kConfirmArg;
+    });
 }
 
 IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service) {
@@ -176,7 +173,8 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
     // never reach the device, and should say why rather than "No device connected".
     if (needsConfirmation(cmd)) {
         resp.success = false;
-        resp.message = "factoryreset wipes the pairing and must be confirmed explicitly (pass --yes)";
+        resp.message =
+            "factoryreset wipes the pairing and must be confirmed explicitly (pass --yes)";
         return resp;
     }
 
@@ -185,7 +183,8 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
     // rather than "No device connected".
     if (cmd.type == IpcCommandType::Raw) {
         resp.success = false;
-        resp.message = "raw is only available in Debug builds (rebuild sonyd with -DCMAKE_BUILD_TYPE=Debug)";
+        resp.message =
+            "raw is only available in Debug builds (rebuild sonyd with -DCMAKE_BUILD_TYPE=Debug)";
         return resp;
     }
 #endif
@@ -193,7 +192,9 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
     auto* dev = service.activeDevice();
     if (cmd.type == IpcCommandType::Status) {
         resp.success = service.isConnected();
-        resp.message = resp.success ? "Connected" : dev ? "Device disconnected" : "No device selected";
+        resp.message = resp.success ? "Connected"
+                       : dev        ? "Device disconnected"
+                                    : "No device selected";
         if (dev) resp.data = "model=" + dev->name();
         return resp;
     }
@@ -210,7 +211,8 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         case IpcCommandType::Info: {
             std::ostringstream oss;
             oss << dev->name() << "\n\n"
-                << "Protocol: " << (dev->protocolVersion() == SonyProtocolVersion::V1 ? "v1" : "v2") << "\n"
+                << "Protocol: " << (dev->protocolVersion() == SonyProtocolVersion::V1 ? "v1" : "v2")
+                << "\n"
                 << "Firmware: " << (snap->firmware.empty() ? "Unknown" : snap->firmware) << "\n"
                 << "Codec: " << (snap->codec.empty() ? "Unknown" : snap->codec) << "\n";
             if (snap->battery.main.has_value()) {
@@ -244,7 +246,8 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         case IpcCommandType::Battery: {
             std::ostringstream oss;
             if (snap->battery.left.has_value() && snap->battery.right.has_value()) {
-                oss << "Left: " << *snap->battery.left << "%, Right: " << *snap->battery.right << "%";
+                oss << "Left: " << *snap->battery.left << "%, Right: " << *snap->battery.right
+                    << "%";
                 if (snap->battery.caseBattery.has_value()) {
                     oss << ", Case: " << *snap->battery.caseBattery << "%";
                 }
@@ -408,7 +411,8 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         case IpcCommandType::FactoryReset: {
             dev->factoryReset();
             resp.success = true;
-            resp.message = "Factory reset sent; pairing wiped, headphones will need to be re-paired";
+            resp.message =
+                "Factory reset sent; pairing wiped, headphones will need to be re-paired";
             return resp;
         }
 

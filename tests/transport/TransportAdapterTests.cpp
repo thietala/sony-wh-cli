@@ -38,21 +38,13 @@ public:
         _connected = true;
     }
 
-    void disconnect() noexcept override {
-        _connected = false;
-    }
+    void disconnect() noexcept override { _connected = false; }
 
-    bool isConnected() noexcept override {
-        return _connected;
-    }
+    bool isConnected() noexcept override { return _connected; }
 
-    std::vector<BluetoothDevice> getConnectedDevices() override {
-        return devices;
-    }
+    std::vector<BluetoothDevice> getConnectedDevices() override { return devices; }
 
-    SonyProtocolVersion getProtocolVersion() noexcept override {
-        return version;
-    }
+    SonyProtocolVersion getProtocolVersion() noexcept override { return version; }
 
     bool _connected{false};
     std::string connectedAddr;
@@ -64,8 +56,8 @@ public:
 
 } // namespace
 
-TEST_CASE("BluetoothConnectorTransport wraps an IBluetoothConnector as ITransport", "[transport][adapter]")
-{
+TEST_CASE("BluetoothConnectorTransport wraps an IBluetoothConnector as ITransport",
+    "[transport][adapter]") {
     auto mock = std::make_unique<MockConnector>();
     MockConnector* rawMock = mock.get();
 
@@ -91,7 +83,9 @@ TEST_CASE("BluetoothConnectorTransport wraps an IBluetoothConnector as ITranspor
     REQUIRE(static_cast<char>(inBuf[0]) == 'H');
 
     // Test discovery adapter
-    rawMock->devices = {{"WH-1000XM4", "11:22:33:44:55:66"}};
+    rawMock->devices = {
+        {"WH-1000XM4", "11:22:33:44:55:66"}
+    };
     BluetoothConnectorDiscovery discovery(rawMock);
     auto discovered = discovery.discover();
     REQUIRE(discovered.size() == 1);
@@ -102,15 +96,17 @@ TEST_CASE("BluetoothConnectorTransport wraps an IBluetoothConnector as ITranspor
     REQUIRE_FALSE(transport.isConnected());
 }
 
-TEST_CASE("TransportBluetoothConnector adapts ITransport into IBluetoothConnector", "[transport][adapter]")
-{
+TEST_CASE("TransportBluetoothConnector adapts ITransport into IBluetoothConnector",
+    "[transport][adapter]") {
     auto fakeTransport = std::make_unique<FakeTransport>();
     FakeTransport* rawFake = fakeTransport.get();
 
     auto fakeDiscovery = std::make_unique<FakeDeviceDiscovery>();
-    fakeDiscovery->addDevice(DiscoveredDevice{.name = "Sony XM5", .address = DeviceAddress("55:44:33:22:11:00")});
+    fakeDiscovery->addDevice(
+        DiscoveredDevice{.name = "Sony XM5", .address = DeviceAddress("55:44:33:22:11:00")});
 
-    TransportBluetoothConnector connector(std::move(fakeTransport), std::move(fakeDiscovery), SonyProtocolVersion::V2);
+    TransportBluetoothConnector connector(
+        std::move(fakeTransport), std::move(fakeDiscovery), SonyProtocolVersion::V2);
 
     REQUIRE_FALSE(connector.isConnected());
     connector.connect("55:44:33:22:11:00");
@@ -143,8 +139,8 @@ TEST_CASE("TransportBluetoothConnector adapts ITransport into IBluetoothConnecto
     REQUIRE_FALSE(connector.isConnected());
 }
 
-TEST_CASE("Integration: BluetoothWrapper functions end-to-end over FakeTransport", "[transport][integration]")
-{
+TEST_CASE("Integration: BluetoothWrapper functions end-to-end over FakeTransport",
+    "[transport][integration]") {
     auto fakeTransport = std::make_unique<FakeTransport>();
     FakeTransport* rawFake = fakeTransport.get();
 
@@ -181,15 +177,15 @@ TEST_CASE("Integration: BluetoothWrapper functions end-to-end over FakeTransport
     // The wrapper must have automatically ACKed the received DATA_MDR frame back to the fake transport
     REQUIRE(rawFake->sentCount() >= 3);
     const auto& hostAckFrame = rawFake->lastSentFrame();
-    auto unpackedHostAck = CommandSerializer::unpackBtMessage(Buffer(hostAckFrame.begin() + 1, hostAckFrame.end() - 1));
+    auto unpackedHostAck = CommandSerializer::unpackBtMessage(
+        Buffer(hostAckFrame.begin() + 1, hostAckFrame.end() - 1));
     REQUIRE(unpackedHostAck.dataType == DATA_TYPE::ACK);
 
     wrapper.disconnect();
     REQUIRE_FALSE(wrapper.isConnected());
 }
 
-TEST_CASE("Platform transport aliases instantiate properly", "[transport][platform]")
-{
+TEST_CASE("Platform transport aliases instantiate properly", "[transport][platform]") {
     auto mock = std::make_unique<MockConnector>();
     LinuxBluetoothTransport linuxTransport(std::move(mock));
     REQUIRE_FALSE(linuxTransport.isConnected());

@@ -9,8 +9,7 @@ using namespace sony;
 
 namespace {
 
-template <typename F>
-void requireErrorCode(F&& fn, SonyErrorCode expectedCode) {
+template <typename F> void requireErrorCode(F&& fn, SonyErrorCode expectedCode) {
     try {
         fn();
         FAIL("Expected SonyException not thrown");
@@ -21,8 +20,7 @@ void requireErrorCode(F&& fn, SonyErrorCode expectedCode) {
 
 } // namespace
 
-TEST_CASE("FakeTransport handles connection lifecycle", "[transport][fake]")
-{
+TEST_CASE("FakeTransport handles connection lifecycle", "[transport][fake]") {
     FakeTransport transport;
 
     REQUIRE_FALSE(transport.isConnected());
@@ -37,20 +35,17 @@ TEST_CASE("FakeTransport handles connection lifecycle", "[transport][fake]")
     REQUIRE_FALSE(transport.isConnected());
 }
 
-TEST_CASE("FakeTransport fails connection when configured", "[transport][fake]")
-{
+TEST_CASE("FakeTransport fails connection when configured", "[transport][fake]") {
     FakeTransport transport;
     transport.setFailConnect(true, SonyErrorCode::TransportFailure);
 
-    requireErrorCode([&]() {
-        transport.connect(DeviceAddress("AA:BB:CC:DD:EE:FF"));
-    }, SonyErrorCode::TransportFailure);
+    requireErrorCode([&]() { transport.connect(DeviceAddress("AA:BB:CC:DD:EE:FF")); },
+        SonyErrorCode::TransportFailure);
 
     REQUIRE_FALSE(transport.isConnected());
 }
 
-TEST_CASE("FakeTransport send records frames", "[transport][fake]")
-{
+TEST_CASE("FakeTransport send records frames", "[transport][fake]") {
     FakeTransport transport;
     transport.connect(DeviceAddress("11:22:33:44:55:66"));
 
@@ -58,10 +53,12 @@ TEST_CASE("FakeTransport send records frames", "[transport][fake]")
     std::vector<uint8_t> frame2 = {0x0c, 0x00, 0x03, 0x04};
 
     std::vector<std::byte> byteSpan1;
-    for (auto b : frame1) byteSpan1.push_back(static_cast<std::byte>(b));
+    for (auto b : frame1)
+        byteSpan1.push_back(static_cast<std::byte>(b));
 
     std::vector<std::byte> byteSpan2;
-    for (auto b : frame2) byteSpan2.push_back(static_cast<std::byte>(b));
+    for (auto b : frame2)
+        byteSpan2.push_back(static_cast<std::byte>(b));
 
     size_t sent1 = transport.send(byteSpan1);
     size_t sent2 = transport.send(byteSpan2);
@@ -82,8 +79,7 @@ TEST_CASE("FakeTransport send records frames", "[transport][fake]")
     REQUIRE(transport.sentFrames().empty());
 }
 
-TEST_CASE("FakeTransport queue incoming and receive delivers data", "[transport][fake]")
-{
+TEST_CASE("FakeTransport queue incoming and receive delivers data", "[transport][fake]") {
     FakeTransport transport;
     transport.connect(DeviceAddress("11:22:33:44:55:66"));
 
@@ -102,8 +98,8 @@ TEST_CASE("FakeTransport queue incoming and receive delivers data", "[transport]
     REQUIRE(transport.incomingBytesAvailable() == 0);
 }
 
-TEST_CASE("FakeTransport delivers multiple frames in one read if buffer allows", "[transport][fake]")
-{
+TEST_CASE(
+    "FakeTransport delivers multiple frames in one read if buffer allows", "[transport][fake]") {
     FakeTransport transport;
     transport.connect(DeviceAddress("11:22:33:44:55:66"));
 
@@ -125,8 +121,8 @@ TEST_CASE("FakeTransport delivers multiple frames in one read if buffer allows",
     }
 }
 
-TEST_CASE("FakeTransport simulates fragmented messages via maxReceiveChunkSize", "[transport][fake]")
-{
+TEST_CASE(
+    "FakeTransport simulates fragmented messages via maxReceiveChunkSize", "[transport][fake]") {
     FakeTransport transport;
     transport.connect(DeviceAddress("11:22:33:44:55:66"));
 
@@ -162,16 +158,13 @@ TEST_CASE("FakeTransport simulates fragmented messages via maxReceiveChunkSize",
     REQUIRE(transport.incomingBytesAvailable() == 0);
 }
 
-TEST_CASE("FakeTransport simulates timeouts on receive and send", "[transport][fake]")
-{
+TEST_CASE("FakeTransport simulates timeouts on receive and send", "[transport][fake]") {
     FakeTransport transport;
     transport.connect(DeviceAddress("11:22:33:44:55:66"));
 
     SECTION("Timeout on empty queue") {
         std::array<std::byte, 10> buf{};
-        requireErrorCode([&]() {
-            transport.receive(buf);
-        }, SonyErrorCode::Timeout);
+        requireErrorCode([&]() { transport.receive(buf); }, SonyErrorCode::Timeout);
     }
 
     SECTION("Explicit timeout on receive") {
@@ -179,9 +172,7 @@ TEST_CASE("FakeTransport simulates timeouts on receive and send", "[transport][f
         transport.simulateTimeoutOnReceive(true, 1);
 
         std::array<std::byte, 10> buf{};
-        requireErrorCode([&]() {
-            transport.receive(buf);
-        }, SonyErrorCode::Timeout);
+        requireErrorCode([&]() { transport.receive(buf); }, SonyErrorCode::Timeout);
 
         // Next read succeeds as count was 1
         size_t r = transport.receive(buf);
@@ -192,9 +183,7 @@ TEST_CASE("FakeTransport simulates timeouts on receive and send", "[transport][f
         transport.simulateTimeoutOnSend(true, 1);
         std::array<std::byte, 2> data{std::byte{0x01}, std::byte{0x02}};
 
-        requireErrorCode([&]() {
-            transport.send(data);
-        }, SonyErrorCode::Timeout);
+        requireErrorCode([&]() { transport.send(data); }, SonyErrorCode::Timeout);
 
         // Next send succeeds as count was 1
         size_t sent = transport.send(data);
@@ -202,8 +191,7 @@ TEST_CASE("FakeTransport simulates timeouts on receive and send", "[transport][f
     }
 }
 
-TEST_CASE("FakeTransport simulates disconnects", "[transport][fake]")
-{
+TEST_CASE("FakeTransport simulates disconnects", "[transport][fake]") {
     FakeTransport transport;
     transport.connect(DeviceAddress("11:22:33:44:55:66"));
     REQUIRE(transport.isConnected());
@@ -212,18 +200,13 @@ TEST_CASE("FakeTransport simulates disconnects", "[transport][fake]")
     REQUIRE_FALSE(transport.isConnected());
 
     std::array<std::byte, 2> data{std::byte{0x01}, std::byte{0x02}};
-    requireErrorCode([&]() {
-        transport.send(data);
-    }, SonyErrorCode::Disconnected);
+    requireErrorCode([&]() { transport.send(data); }, SonyErrorCode::Disconnected);
 
     std::array<std::byte, 10> buf{};
-    requireErrorCode([&]() {
-        transport.receive(buf);
-    }, SonyErrorCode::Disconnected);
+    requireErrorCode([&]() { transport.receive(buf); }, SonyErrorCode::Disconnected);
 }
 
-TEST_CASE("FakeDeviceDiscovery records and returns devices", "[transport][fake]")
-{
+TEST_CASE("FakeDeviceDiscovery records and returns devices", "[transport][fake]") {
     FakeDeviceDiscovery discovery;
     REQUIRE(discovery.discover().empty());
 

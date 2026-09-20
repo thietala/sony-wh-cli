@@ -6,10 +6,7 @@
 
 namespace sony::protocol {
 
-enum class ProtocolGeneration {
-    V1,
-    V2
-};
+enum class ProtocolGeneration { V1, V2 };
 
 class IProtocol {
 public:

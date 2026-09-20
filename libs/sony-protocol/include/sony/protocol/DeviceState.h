@@ -13,7 +13,9 @@ struct FeatureStatus {
     std::string error;
 };
 inline int64_t stateTimestamp() {
-    return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch())
+        .count();
 }
 struct DeviceState {
     std::map<std::string, FeatureStatus> features;

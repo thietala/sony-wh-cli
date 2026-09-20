@@ -29,10 +29,7 @@ public:
                 auto frame = FrameCodec::decode(bytes);
                 if (frame.type == DataType::DataMdr) {
                     SonyFrame ackFrame{
-                        .type = DataType::Ack,
-                        .sequence = frame.sequence,
-                        .payload = {}
-                    };
+                        .type = DataType::Ack, .sequence = frame.sequence, .payload = {}};
                     queueIncoming(FrameCodec::encode(ackFrame));
                     // Auto-respond to known inquiry requests
                     if (!frame.payload.empty()) {
@@ -67,7 +64,8 @@ public:
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
                                 .sequence = _nextRespSeq(),
-                                .payload = {0x57, 0x00, 0x00, 0x06, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a}
+                                .payload = {
+                                            0x57, 0x00, 0x00, 0x06, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a}
                             }));
                         } else if (op == 0xe6) { // DSEE query
                             queueIncoming(FrameCodec::encode(SonyFrame{
@@ -177,18 +175,17 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
         // Only factoryreset is destructive, and only --yes (any case) confirms it.
         CHECK(IpcProtocol::needsConfirmation(cmdFactoryReset));
         CHECK(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset now")));
-        CHECK_FALSE(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset --yes")));
-        CHECK_FALSE(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("FACTORYRESET --YES")));
+        CHECK_FALSE(
+            IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset --yes")));
+        CHECK_FALSE(
+            IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("FACTORYRESET --YES")));
         CHECK_FALSE(IpcProtocol::needsConfirmation(cmdReset));
     }
 }
 
 TEST_CASE("IpcProtocol serialization and parsing roundtrip", "[core][ipc]") {
     IpcResponse resp{
-        .success = true,
-        .message = "Battery status",
-        .data = "Battery: 85% (Charging)"
-    };
+        .success = true, .message = "Battery status", .data = "Battery: 85% (Charging)"};
 
     auto serialized = IpcProtocol::serializeResponse(resp);
     auto parsed = IpcProtocol::parseResponse(serialized);
@@ -197,11 +194,7 @@ TEST_CASE("IpcProtocol serialization and parsing roundtrip", "[core][ipc]") {
     CHECK(parsed.message == resp.message);
     CHECK(parsed.data == resp.data);
 
-    IpcResponse errResp{
-        .success = false,
-        .message = "No device connected",
-        .data = ""
-    };
+    IpcResponse errResp{.success = false, .message = "No device connected", .data = ""};
 
     auto errSerialized = IpcProtocol::serializeResponse(errResp);
     auto errParsed = IpcProtocol::parseResponse(errSerialized);
@@ -214,9 +207,7 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
     auto transport = std::make_shared<AutoAckFakeTransport>();
     auto discovery = std::make_shared<FakeDeviceDiscovery>();
     discovery->addDevice(transport::DiscoveredDevice{
-        .name = "WH-1000XM5",
-        .address = DeviceAddress("11:22:33:44:55:66")
-    });
+        .name = "WH-1000XM5", .address = DeviceAddress("11:22:33:44:55:66")});
 
     DeviceService service(transport, discovery);
 
@@ -288,7 +279,8 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(service.snapshot()->noiseControl.ambientLevel == 14);
 
         // EQ Preset
-        auto eqResp = IpcProtocol::execute(IpcProtocol::parseCommand("eq preset bass-boost"), service);
+        auto eqResp =
+            IpcProtocol::execute(IpcProtocol::parseCommand("eq preset bass-boost"), service);
         CHECK(eqResp.success);
         CHECK(service.snapshot()->equalizer.preset == 0x16);
 
@@ -306,7 +298,8 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(eqGetResp.data.find("Bass Boost") != std::string::npos);
 
         // EQ Custom
-        auto eqCustResp = IpcProtocol::execute(IpcProtocol::parseCommand("eq custom 5 1 2 3 4 5"), service);
+        auto eqCustResp =
+            IpcProtocol::execute(IpcProtocol::parseCommand("eq custom 5 1 2 3 4 5"), service);
         CHECK(eqCustResp.success);
         CHECK(service.snapshot()->equalizer.clearBass == 5);
         CHECK(service.snapshot()->equalizer.bands[0] == 1);
@@ -351,7 +344,8 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
 #endif
 
         // Adaptive Volume
-        auto avResp = IpcProtocol::execute(IpcProtocol::parseCommand("adaptivevolume off"), service);
+        auto avResp =
+            IpcProtocol::execute(IpcProtocol::parseCommand("adaptivevolume off"), service);
         CHECK(avResp.success);
         CHECK(service.snapshot()->adaptiveVolume == false);
 
@@ -363,7 +357,8 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         CHECK(frRefused.message.find("--yes") != std::string::npos);
         CHECK(transport->sentCount() == sentBeforeFactoryReset);
 
-        auto frConfirmed = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset --yes"), service);
+        auto frConfirmed =
+            IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset --yes"), service);
         CHECK(frConfirmed.success);
         auto frSent = FrameCodec::decode(transport->lastSentFrame());
         CHECK(frSent.payload == std::vector<uint8_t>{0xf8, 0x09, 0x01});
@@ -425,7 +420,8 @@ TEST_CASE("IpcServer connects on demand and yields the device when idle", "[core
 
     auto transport = std::make_shared<AutoAckFakeTransport>();
     auto discovery = std::make_shared<FakeDeviceDiscovery>();
-    discovery->addDevice(transport::DiscoveredDevice{.name = "WH-1000XM5", .address = DeviceAddress("11:22:33:44:55:66")});
+    discovery->addDevice(transport::DiscoveredDevice{
+        .name = "WH-1000XM5", .address = DeviceAddress("11:22:33:44:55:66")});
     auto service = std::make_shared<DeviceService>(transport, discovery);
     REQUIRE_FALSE(service->isConnected());
 

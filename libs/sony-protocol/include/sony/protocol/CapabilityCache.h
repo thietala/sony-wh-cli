@@ -16,9 +16,7 @@ public:
     explicit CapabilityCache(std::filesystem::path storagePath);
 
     static std::string makeKey(
-        SonyModel model,
-        std::string_view firmwareVersion,
-        std::string_view address = "") noexcept;
+        SonyModel model, std::string_view firmwareVersion, std::string_view address = "") noexcept;
 
     [[nodiscard]] std::optional<DeviceCapabilities> get(std::string_view key) const;
     void put(std::string_view key, const DeviceCapabilities& capabilities);

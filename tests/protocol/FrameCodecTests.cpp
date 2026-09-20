@@ -8,8 +8,7 @@ using namespace sony;
 
 namespace {
 
-template <typename F>
-void requireErrorCode(F&& fn, SonyErrorCode expectedCode) {
+template <typename F> void requireErrorCode(F&& fn, SonyErrorCode expectedCode) {
     try {
         fn();
         FAIL("Expected SonyException not thrown");
@@ -20,14 +19,11 @@ void requireErrorCode(F&& fn, SonyErrorCode expectedCode) {
 
 } // namespace
 
-TEST_CASE("FrameCodec encodes a complete SonyFrame", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec encodes a complete SonyFrame", "[protocol][codec]") {
     // Legacy ambient inquiry: payload = {0x66, 0x02}, type = DataMdr (0x0c), seq = 1.
     // Checksum = 0x0c + 1 + 2 + 0x66 + 2 = 0x77.
     SonyFrame frame{
-        .type = DataType::DataMdr,
-        .sequence = 1,
-        .payload = {0x66, 0x02}
+        .type = DataType::DataMdr, .sequence = 1, .payload = {0x66, 0x02}
     };
 
     auto encoded = FrameCodec::encode(frame);
@@ -35,8 +31,7 @@ TEST_CASE("FrameCodec encodes a complete SonyFrame", "[protocol][codec]")
     REQUIRE(encoded == expected);
 }
 
-TEST_CASE("FrameCodec decodes a complete wire frame into a SonyFrame", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec decodes a complete wire frame into a SonyFrame", "[protocol][codec]") {
     std::vector<uint8_t> wireFrame = {0x3e, 0x0c, 0x01, 0, 0, 0, 0x02, 0x66, 0x02, 0x77, 0x3c};
     auto decoded = FrameCodec::decode(wireFrame);
 
@@ -45,13 +40,8 @@ TEST_CASE("FrameCodec decodes a complete wire frame into a SonyFrame", "[protoco
     REQUIRE(decoded.payload == std::vector<uint8_t>{0x66, 0x02});
 }
 
-TEST_CASE("FrameCodec encodes and decodes empty payload (ACK)", "[protocol][codec]")
-{
-    SonyFrame ackFrame{
-        .type = DataType::Ack,
-        .sequence = 0,
-        .payload = {}
-    };
+TEST_CASE("FrameCodec encodes and decodes empty payload (ACK)", "[protocol][codec]") {
+    SonyFrame ackFrame{.type = DataType::Ack, .sequence = 0, .payload = {}};
 
     auto encoded = FrameCodec::encode(ackFrame);
     std::vector<uint8_t> expected = {0x3e, 0x01, 0, 0, 0, 0, 0, 0x01, 0x3c};
@@ -61,12 +51,9 @@ TEST_CASE("FrameCodec encodes and decodes empty payload (ACK)", "[protocol][code
     REQUIRE(decoded == ackFrame);
 }
 
-TEST_CASE("FrameCodec round trips with reserved bytes 0x3c 0x3d 0x3e", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec round trips with reserved bytes 0x3c 0x3d 0x3e", "[protocol][codec]") {
     SonyFrame frame{
-        .type = DataType::DataMdr,
-        .sequence = 0,
-        .payload = {0x3c, 0x3d, 0x3e}
+        .type = DataType::DataMdr, .sequence = 0, .payload = {0x3c, 0x3d, 0x3e}
     };
 
     auto encoded = FrameCodec::encode(frame);
@@ -74,8 +61,7 @@ TEST_CASE("FrameCodec round trips with reserved bytes 0x3c 0x3d 0x3e", "[protoco
     REQUIRE(decoded == frame);
 }
 
-TEST_CASE("FrameCodec escape and unescape all byte values round trip", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec escape and unescape all byte values round trip", "[protocol][codec]") {
     std::vector<uint8_t> allBytes;
     allBytes.reserve(256);
     for (int i = 0; i < 256; ++i) {
@@ -87,55 +73,42 @@ TEST_CASE("FrameCodec escape and unescape all byte values round trip", "[protoco
     REQUIRE(unescaped == allBytes);
 }
 
-TEST_CASE("FrameCodec unescape rejects malformed escape sequences", "[protocol][codec]")
-{
-    requireErrorCode([]() {
-        FrameCodec::unescape(std::vector<uint8_t>{0x3d});
-    }, SonyErrorCode::InvalidFrame);
+TEST_CASE("FrameCodec unescape rejects malformed escape sequences", "[protocol][codec]") {
+    requireErrorCode(
+        []() { FrameCodec::unescape(std::vector<uint8_t>{0x3d}); }, SonyErrorCode::InvalidFrame);
 
-    requireErrorCode([]() {
-        FrameCodec::unescape(std::vector<uint8_t>{0x11, 0x3d});
-    }, SonyErrorCode::InvalidFrame);
+    requireErrorCode([]() { FrameCodec::unescape(std::vector<uint8_t>{0x11, 0x3d}); },
+        SonyErrorCode::InvalidFrame);
 
-    requireErrorCode([]() {
-        FrameCodec::unescape(std::vector<uint8_t>{0x3d, 0x00});
-    }, SonyErrorCode::InvalidFrame);
+    requireErrorCode([]() { FrameCodec::unescape(std::vector<uint8_t>{0x3d, 0x00}); },
+        SonyErrorCode::InvalidFrame);
 
-    requireErrorCode([]() {
-        FrameCodec::unescape(std::vector<uint8_t>{0x3d, 0x3e});
-    }, SonyErrorCode::InvalidFrame);
+    requireErrorCode([]() { FrameCodec::unescape(std::vector<uint8_t>{0x3d, 0x3e}); },
+        SonyErrorCode::InvalidFrame);
 }
 
-TEST_CASE("FrameCodec calculateChecksum returns unsigned modulo-256 sum", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec calculateChecksum returns unsigned modulo-256 sum", "[protocol][codec]") {
     std::vector<uint8_t> data = {0xff, 0x80, 0x01};
     REQUIRE(FrameCodec::calculateChecksum(data) == 0x80);
     REQUIRE(FrameCodec::calculateChecksum(std::span(data.data(), 2)) == 0x7f);
     REQUIRE(FrameCodec::calculateChecksum({}) == 0);
 }
 
-TEST_CASE("FrameCodec decode rejects corrupted checksum", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec decode rejects corrupted checksum", "[protocol][codec]") {
     std::vector<uint8_t> wireFrame = {0x3e, 0x0c, 0x01, 0, 0, 0, 0x02, 0x66, 0x02, 0x77, 0x3c};
     wireFrame[wireFrame.size() - 2] ^= 0x01; // corrupt checksum
 
-    requireErrorCode([&]() {
-        FrameCodec::decode(wireFrame);
-    }, SonyErrorCode::InvalidChecksum);
+    requireErrorCode([&]() { FrameCodec::decode(wireFrame); }, SonyErrorCode::InvalidChecksum);
 }
 
-TEST_CASE("FrameCodec decode rejects corrupted payload", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec decode rejects corrupted payload", "[protocol][codec]") {
     std::vector<uint8_t> wireFrame = {0x3e, 0x0c, 0x01, 0, 0, 0, 0x02, 0x66, 0x02, 0x77, 0x3c};
     wireFrame[7] ^= 0x01; // corrupt payload byte
 
-    requireErrorCode([&]() {
-        FrameCodec::decode(wireFrame);
-    }, SonyErrorCode::InvalidChecksum);
+    requireErrorCode([&]() { FrameCodec::decode(wireFrame); }, SonyErrorCode::InvalidChecksum);
 }
 
-TEST_CASE("FrameCodec decode rejects missing or invalid delimiters", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec decode rejects missing or invalid delimiters", "[protocol][codec]") {
     std::vector<uint8_t> valid = {0x3e, 0x0c, 0x01, 0, 0, 0, 0x02, 0x66, 0x02, 0x77, 0x3c};
 
     // Missing START delimiter
@@ -149,11 +122,11 @@ TEST_CASE("FrameCodec decode rejects missing or invalid delimiters", "[protocol]
     requireErrorCode([&]() { FrameCodec::decode(noEnd); }, SonyErrorCode::InvalidFrame);
 
     // Too small for delimiters
-    requireErrorCode([]() { FrameCodec::decode(std::vector<uint8_t>{0x3e}); }, SonyErrorCode::InvalidFrame);
+    requireErrorCode(
+        []() { FrameCodec::decode(std::vector<uint8_t>{0x3e}); }, SonyErrorCode::InvalidFrame);
 }
 
-TEST_CASE("FrameCodec decodeBody decodes un-delimited body", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec decodeBody decodes un-delimited body", "[protocol][codec]") {
     // Body without delimiters 0x3e and 0x3c
     std::vector<uint8_t> body = {0x0c, 0x01, 0, 0, 0, 0x02, 0x66, 0x02, 0x77};
     auto decoded = FrameCodec::decodeBody(body);
@@ -163,25 +136,16 @@ TEST_CASE("FrameCodec decodeBody decodes un-delimited body", "[protocol][codec]"
     REQUIRE(decoded.payload == std::vector<uint8_t>{0x66, 0x02});
 }
 
-TEST_CASE("FrameCodec decode rejects declared length exceeding body data", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec decode rejects declared length exceeding body data", "[protocol][codec]") {
     std::vector<uint8_t> body = {0x0c, 0, 0, 0, 0, 2, 0x67, 2, 0x77};
     body[5] = 10; // declared length 10 but only 2 payload bytes provided
 
-    requireErrorCode([&]() {
-        FrameCodec::decodeBody(body);
-    }, SonyErrorCode::InvalidFrame);
+    requireErrorCode([&]() { FrameCodec::decodeBody(body); }, SonyErrorCode::InvalidFrame);
 }
 
-TEST_CASE("FrameCodec encode rejects frames exceeding MAX_FRAME_SIZE", "[protocol][codec]")
-{
+TEST_CASE("FrameCodec encode rejects frames exceeding MAX_FRAME_SIZE", "[protocol][codec]") {
     SonyFrame frame{
-        .type = DataType::DataMdr,
-        .sequence = 0,
-        .payload = std::vector<uint8_t>(2040, 0)
-    };
+        .type = DataType::DataMdr, .sequence = 0, .payload = std::vector<uint8_t>(2040, 0)};
 
-    requireErrorCode([&]() {
-        FrameCodec::encode(frame);
-    }, SonyErrorCode::InvalidFrame);
+    requireErrorCode([&]() { FrameCodec::encode(frame); }, SonyErrorCode::InvalidFrame);
 }

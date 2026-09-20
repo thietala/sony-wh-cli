@@ -17,22 +17,22 @@
 namespace sony::protocol {
 
 enum class EqualizerPreset : uint8_t {
-    Off         = 0x00,
-    Bright      = 0x10,
-    Excited     = 0x11,
-    Mellow      = 0x12,
-    Relaxed     = 0x13,
-    Vocal       = 0x14,
+    Off = 0x00,
+    Bright = 0x10,
+    Excited = 0x11,
+    Mellow = 0x12,
+    Relaxed = 0x13,
+    Vocal = 0x14,
     TrebleBoost = 0x15,
-    BassBoost   = 0x16,
-    Speech      = 0x17,
-    Manual      = 0xa0,
+    BassBoost = 0x16,
+    Speech = 0x17,
+    Manual = 0xa0,
 };
 
 struct EqualizerPresetInfo {
     EqualizerPreset preset;
-    std::string_view id;           ///< stable identifier used on the CLI and over IPC
-    std::string_view displayName;  ///< human-readable label
+    std::string_view id;          ///< stable identifier used on the CLI and over IPC
+    std::string_view displayName; ///< human-readable label
 };
 
 /// Every preset, in the order they are offered in the interface.

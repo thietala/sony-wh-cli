@@ -178,9 +178,7 @@ void FakeTransport::setConnected(bool connected) noexcept {
     _connected = connected;
 }
 
-void FakeTransport::simulateDisconnect() noexcept {
-    disconnect();
-}
+void FakeTransport::simulateDisconnect() noexcept { disconnect(); }
 
 void FakeTransport::setFailConnect(bool fail, SonyErrorCode code) {
     std::lock_guard lock(_mutex);

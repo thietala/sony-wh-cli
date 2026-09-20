@@ -10,4 +10,4 @@ public:
     static Json execute(const Json& request, IDeviceService& service);
     static std::string executeLine(std::string_view line, IDeviceService& service);
 };
-}
+} // namespace sony::core

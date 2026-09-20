@@ -22,7 +22,8 @@ public:
     // idleDisconnect: how long the device connection may sit unused (no
     // command executed) before sonyd releases it, so other apps (e.g. the
     // headphones' own phone app) can take over its exclusive control link.
-    explicit IpcServer(std::shared_ptr<IDeviceService> service, std::string socketPath = defaultSocketPath(),
+    explicit IpcServer(std::shared_ptr<IDeviceService> service,
+        std::string socketPath = defaultSocketPath(),
         std::chrono::milliseconds idleDisconnect = std::chrono::seconds(15));
     ~IpcServer();
 
@@ -38,7 +39,11 @@ private:
     void _serverLoop();
     void _executeLoop();
     void _connectOnDemand(const std::string& line);
-    struct Job { std::string line; std::promise<std::string> result; std::atomic<bool> cancelled{false}; };
+    struct Job {
+        std::string line;
+        std::promise<std::string> result;
+        std::atomic<bool> cancelled{false};
+    };
 
     std::shared_ptr<IDeviceService> _service;
     std::string _socketPath;

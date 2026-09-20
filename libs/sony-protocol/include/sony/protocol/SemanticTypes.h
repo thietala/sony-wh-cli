@@ -15,11 +15,7 @@ struct BatteryState {
     bool charging{false};
 };
 
-enum class NoiseControlMode {
-    Off,
-    NoiseCancelling,
-    Ambient
-};
+enum class NoiseControlMode { Off, NoiseCancelling, Ambient };
 
 struct NoiseControlState {
     NoiseControlMode mode{NoiseControlMode::Off};

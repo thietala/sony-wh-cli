@@ -18,11 +18,9 @@ std::string toUpper(std::string_view input) {
 const std::vector<DeviceProfile>& getStaticProfiles() {
     static const std::vector<DeviceProfile> profiles = {
         // WH-1000XM3 (V1 protocol, ANC/Ambient, Single battery)
-        DeviceProfile{
-            .model = SonyModel::WH1000XM3,
-            .protocol = SonyProtocolVersion::V1,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WH1000XM3,
+                      .protocol = SonyProtocolVersion::V1,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = false,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -36,17 +34,13 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = false,
                 .codecInfo = false,
                 .wearSensor = false,
-                .multipoint = false
-            }
-        },
+                .multipoint = false} },
         // WH-1000XM4 (V1 protocol, ANC/Ambient, Single battery, wear sensor, multipoint)
         // Battery, EQ + Clear Bass, firmware and codec readback verified on
         // hardware (firmware 3.0.1) over the legacy V1 opcodes.
-        DeviceProfile{
-            .model = SonyModel::WH1000XM4,
-            .protocol = SonyProtocolVersion::V1,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WH1000XM4,
+                      .protocol = SonyProtocolVersion::V1,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = false,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -60,15 +54,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
         // WH-1000XM5 (V2 protocol, Full capability set)
-        DeviceProfile{
-            .model = SonyModel::WH1000XM5,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WH1000XM5,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = false,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -84,15 +74,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .wearSensor = true,
                 .multipoint = true,
                 .reset = true,
-                .factoryReset = true
-            }
-        },
+                .factoryReset = true}},
         // WH-1000XM6 (V2 protocol, Full capability set)
-        DeviceProfile{
-            .model = SonyModel::WH1000XM6,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WH1000XM6,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = false,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -106,15 +92,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
         // WF-1000XM4 (V2 protocol, TWS dual battery + case, speak to chat, wear sensor)
-        DeviceProfile{
-            .model = SonyModel::WF1000XM4,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WF1000XM4,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = true,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -128,15 +110,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
         // WF-1000XM5 (V2 protocol, TWS dual battery + case, adaptive volume, wear sensor)
-        DeviceProfile{
-            .model = SonyModel::WF1000XM5,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WF1000XM5,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = true,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -150,15 +128,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
         // WF-1000XM6 (V2 protocol, TWS flagship)
-        DeviceProfile{
-            .model = SonyModel::WF1000XM6,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WF1000XM6,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = true,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -172,16 +146,12 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
 
         // WH-CH720N (V2 protocol, over-ear, EQ, DSEE, multipoint)
-        DeviceProfile{
-            .model = SonyModel::WHCH720N,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::WHCH720N,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = false,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -195,15 +165,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = false,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
         // ULT WEAR / WH-ULT900N (V2 protocol, over-ear, wear sensor, multipoint)
-        DeviceProfile{
-            .model = SonyModel::ULTWear,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::ULTWear,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = false,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -217,15 +183,11 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        },
+                .multipoint = true}  },
         // LinkBuds S / WF-LS900N (V2 protocol, TWS dual battery, speak-to-chat, wear sensor)
-        DeviceProfile{
-            .model = SonyModel::LinkBudsS,
-            .protocol = SonyProtocolVersion::V2,
-            .capabilities = DeviceCapabilities{
-                .battery = true,
+        DeviceProfile{.model = SonyModel::LinkBudsS,
+                      .protocol = SonyProtocolVersion::V2,
+                      .capabilities = DeviceCapabilities{.battery = true,
                 .dualBattery = true,
                 .noiseCancelling = true,
                 .ambientSound = true,
@@ -239,9 +201,7 @@ const std::vector<DeviceProfile>& getStaticProfiles() {
                 .firmwareInfo = true,
                 .codecInfo = true,
                 .wearSensor = true,
-                .multipoint = true
-            }
-        }
+                .multipoint = true}  }
     };
     return profiles;
 }
@@ -255,35 +215,45 @@ SonyModel DeviceProfileRegistry::identifyModel(std::string_view deviceName) noex
 
     std::string upper = toUpper(deviceName);
 
-    if (upper.find("WH-1000XM3") != std::string::npos || upper.find("WH1000XM3") != std::string::npos) {
+    if (upper.find("WH-1000XM3") != std::string::npos ||
+        upper.find("WH1000XM3") != std::string::npos) {
         return SonyModel::WH1000XM3;
     }
-    if (upper.find("WH-1000XM4") != std::string::npos || upper.find("WH1000XM4") != std::string::npos) {
+    if (upper.find("WH-1000XM4") != std::string::npos ||
+        upper.find("WH1000XM4") != std::string::npos) {
         return SonyModel::WH1000XM4;
     }
-    if (upper.find("WH-1000XM5") != std::string::npos || upper.find("WH1000XM5") != std::string::npos) {
+    if (upper.find("WH-1000XM5") != std::string::npos ||
+        upper.find("WH1000XM5") != std::string::npos) {
         return SonyModel::WH1000XM5;
     }
-    if (upper.find("WH-1000XM6") != std::string::npos || upper.find("WH1000XM6") != std::string::npos) {
+    if (upper.find("WH-1000XM6") != std::string::npos ||
+        upper.find("WH1000XM6") != std::string::npos) {
         return SonyModel::WH1000XM6;
     }
-    if (upper.find("WF-1000XM4") != std::string::npos || upper.find("WF1000XM4") != std::string::npos) {
+    if (upper.find("WF-1000XM4") != std::string::npos ||
+        upper.find("WF1000XM4") != std::string::npos) {
         return SonyModel::WF1000XM4;
     }
-    if (upper.find("WF-1000XM5") != std::string::npos || upper.find("WF1000XM5") != std::string::npos) {
+    if (upper.find("WF-1000XM5") != std::string::npos ||
+        upper.find("WF1000XM5") != std::string::npos) {
         return SonyModel::WF1000XM5;
     }
-    if (upper.find("WF-1000XM6") != std::string::npos || upper.find("WF1000XM6") != std::string::npos) {
+    if (upper.find("WF-1000XM6") != std::string::npos ||
+        upper.find("WF1000XM6") != std::string::npos) {
         return SonyModel::WF1000XM6;
     }
 
     if (upper.find("WH-CH720N") != std::string::npos || upper.find("CH720N") != std::string::npos) {
         return SonyModel::WHCH720N;
     }
-    if (upper.find("ULT WEAR") != std::string::npos || upper.find("WH-ULT900N") != std::string::npos || upper.find("ULT900N") != std::string::npos) {
+    if (upper.find("ULT WEAR") != std::string::npos ||
+        upper.find("WH-ULT900N") != std::string::npos ||
+        upper.find("ULT900N") != std::string::npos) {
         return SonyModel::ULTWear;
     }
-    if (upper.find("LINKBUDS S") != std::string::npos || upper.find("WF-LS900N") != std::string::npos || upper.find("LS900N") != std::string::npos) {
+    if (upper.find("LINKBUDS S") != std::string::npos ||
+        upper.find("WF-LS900N") != std::string::npos || upper.find("LS900N") != std::string::npos) {
         return SonyModel::LinkBudsS;
     }
 
@@ -312,11 +282,9 @@ DeviceProfile DeviceProfileRegistry::getProfileForDevice(std::string_view device
     }
 
     // Fallback profile for unknown devices (probed dynamically)
-    return DeviceProfile{
-        .model = SonyModel::Unknown,
+    return DeviceProfile{.model = SonyModel::Unknown,
         .protocol = SonyProtocolVersion::V1,
-        .capabilities = DeviceCapabilities{}
-    };
+        .capabilities = DeviceCapabilities{}};
 }
 
 bool DeviceProfileRegistry::isKnownDevice(SonyModel model) noexcept {

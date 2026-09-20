@@ -10,12 +10,18 @@ namespace sony::protocol::detail {
 
 inline std::string codecName(uint8_t code) {
     switch (code) {
-        case 0x01: return "SBC";
-        case 0x02: return "AAC";
-        case 0x10: return "LDAC";
-        case 0x20: return "aptX";
-        case 0x21: return "aptX HD";
-        default:   return "";
+    case 0x01:
+        return "SBC";
+    case 0x02:
+        return "AAC";
+    case 0x10:
+        return "LDAC";
+    case 0x20:
+        return "aptX";
+    case 0x21:
+        return "aptX HD";
+    default:
+        return "";
     }
 }
 

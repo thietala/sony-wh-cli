@@ -8,39 +8,39 @@
 
 namespace sony {
 
-enum class LogLevel {
-    Trace,
-    Debug,
-    Info,
-    Warn,
-    Error,
-    Off
-};
+enum class LogLevel { Trace, Debug, Info, Warn, Error, Off };
 
 [[nodiscard]] constexpr std::string_view to_string(LogLevel level) noexcept {
     switch (level) {
-        case LogLevel::Trace: return "TRACE";
-        case LogLevel::Debug: return "DEBUG";
-        case LogLevel::Info:  return "INFO";
-        case LogLevel::Warn:  return "WARN";
-        case LogLevel::Error: return "ERROR";
-        case LogLevel::Off:   return "OFF";
+    case LogLevel::Trace:
+        return "TRACE";
+    case LogLevel::Debug:
+        return "DEBUG";
+    case LogLevel::Info:
+        return "INFO";
+    case LogLevel::Warn:
+        return "WARN";
+    case LogLevel::Error:
+        return "ERROR";
+    case LogLevel::Off:
+        return "OFF";
     }
     return "UNKNOWN";
 }
 
 namespace LogCategory {
-    inline constexpr std::string_view Transport    = "sony.transport";
-    inline constexpr std::string_view Protocol     = "sony.protocol";
-    inline constexpr std::string_view Session      = "sony.session";
-    inline constexpr std::string_view Device       = "sony.device";
-    inline constexpr std::string_view Capabilities = "sony.capabilities";
-    inline constexpr std::string_view State        = "sony.state";
+inline constexpr std::string_view Transport = "sony.transport";
+inline constexpr std::string_view Protocol = "sony.protocol";
+inline constexpr std::string_view Session = "sony.session";
+inline constexpr std::string_view Device = "sony.device";
+inline constexpr std::string_view Capabilities = "sony.capabilities";
+inline constexpr std::string_view State = "sony.state";
 } // namespace LogCategory
 
 class Logger {
 public:
-    using LogSink = std::function<void(LogLevel level, std::string_view category, std::string_view message)>;
+    using LogSink =
+        std::function<void(LogLevel level, std::string_view category, std::string_view message)>;
 
     static void setLogLevel(LogLevel level) noexcept;
     [[nodiscard]] static LogLevel getLogLevel() noexcept;

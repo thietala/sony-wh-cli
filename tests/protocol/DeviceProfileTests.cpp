@@ -3,8 +3,8 @@
 
 using namespace sony::protocol;
 
-TEST_CASE("DeviceProfileRegistry: identifies model from advertised device names", "[protocol][profile]")
-{
+TEST_CASE(
+    "DeviceProfileRegistry: identifies model from advertised device names", "[protocol][profile]") {
     REQUIRE(DeviceProfileRegistry::identifyModel("WH-1000XM3") == SonyModel::WH1000XM3);
     REQUIRE(DeviceProfileRegistry::identifyModel("Sony WH-1000XM3") == SonyModel::WH1000XM3);
 
@@ -35,10 +35,9 @@ TEST_CASE("DeviceProfileRegistry: identifies model from advertised device names"
     REQUIRE(DeviceProfileRegistry::identifyModel("") == SonyModel::Unknown);
 }
 
-TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known models", "[protocol][profile]")
-{
-    SECTION("WH-1000XM4 (V1)")
-    {
+TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known models",
+    "[protocol][profile]") {
+    SECTION("WH-1000XM4 (V1)") {
         auto profile = DeviceProfileRegistry::getProfile(SonyModel::WH1000XM4);
         REQUIRE(profile.has_value());
         REQUIRE(profile->model == SonyModel::WH1000XM4);
@@ -57,8 +56,7 @@ TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known mode
         REQUIRE(profile->capabilities.multipoint == true);
     }
 
-    SECTION("WH-1000XM5 (V2)")
-    {
+    SECTION("WH-1000XM5 (V2)") {
         auto profile = DeviceProfileRegistry::getProfile(SonyModel::WH1000XM5);
         REQUIRE(profile.has_value());
         REQUIRE(profile->model == SonyModel::WH1000XM5);
@@ -77,8 +75,7 @@ TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known mode
         REQUIRE(profile->capabilities.codecInfo == true);
     }
 
-    SECTION("WF-1000XM5 (TWS Earbuds, V2)")
-    {
+    SECTION("WF-1000XM5 (TWS Earbuds, V2)") {
         auto profile = DeviceProfileRegistry::getProfile(SonyModel::WF1000XM5);
         REQUIRE(profile.has_value());
         REQUIRE(profile->model == SonyModel::WF1000XM5);
@@ -90,8 +87,8 @@ TEST_CASE("DeviceProfileRegistry: provides immediate capabilities for known mode
     }
 }
 
-TEST_CASE("DeviceProfileRegistry: handles unknown devices with fallback profile", "[protocol][profile]")
-{
+TEST_CASE(
+    "DeviceProfileRegistry: handles unknown devices with fallback profile", "[protocol][profile]") {
     auto profile = DeviceProfileRegistry::getProfileForDevice("Unknown Headset 9000");
     REQUIRE(profile.model == SonyModel::Unknown);
     REQUIRE_FALSE(DeviceProfileRegistry::isKnownDevice(profile.model));
@@ -100,8 +97,7 @@ TEST_CASE("DeviceProfileRegistry: handles unknown devices with fallback profile"
     REQUIRE_FALSE(profile.capabilities.dsee);
 }
 
-TEST_CASE("DeviceProfileRegistry: string conversions", "[protocol][profile]")
-{
+TEST_CASE("DeviceProfileRegistry: string conversions", "[protocol][profile]") {
     REQUIRE(to_string(SonyModel::WH1000XM4) == "WH-1000XM4");
     REQUIRE(to_string(SonyModel::WH1000XM5) == "WH-1000XM5");
     REQUIRE(to_string(SonyModel::WHCH720N) == "WH-CH720N");
@@ -121,16 +117,16 @@ TEST_CASE("DeviceProfileRegistry: string conversions", "[protocol][profile]")
 #include "sony/protocol/EqualizerPresets.h"
 
 TEST_CASE("Equalizer preset codes match the protocol reference", "[protocol][eq]") {
-    CHECK(static_cast<int>(EqualizerPreset::Off)         == 0x00);
-    CHECK(static_cast<int>(EqualizerPreset::Bright)      == 0x10);
-    CHECK(static_cast<int>(EqualizerPreset::Excited)     == 0x11);
-    CHECK(static_cast<int>(EqualizerPreset::Mellow)      == 0x12);
-    CHECK(static_cast<int>(EqualizerPreset::Relaxed)     == 0x13);
-    CHECK(static_cast<int>(EqualizerPreset::Vocal)       == 0x14);
+    CHECK(static_cast<int>(EqualizerPreset::Off) == 0x00);
+    CHECK(static_cast<int>(EqualizerPreset::Bright) == 0x10);
+    CHECK(static_cast<int>(EqualizerPreset::Excited) == 0x11);
+    CHECK(static_cast<int>(EqualizerPreset::Mellow) == 0x12);
+    CHECK(static_cast<int>(EqualizerPreset::Relaxed) == 0x13);
+    CHECK(static_cast<int>(EqualizerPreset::Vocal) == 0x14);
     CHECK(static_cast<int>(EqualizerPreset::TrebleBoost) == 0x15);
-    CHECK(static_cast<int>(EqualizerPreset::BassBoost)   == 0x16);
-    CHECK(static_cast<int>(EqualizerPreset::Speech)      == 0x17);
-    CHECK(static_cast<int>(EqualizerPreset::Manual)      == 0xa0);
+    CHECK(static_cast<int>(EqualizerPreset::BassBoost) == 0x16);
+    CHECK(static_cast<int>(EqualizerPreset::Speech) == 0x17);
+    CHECK(static_cast<int>(EqualizerPreset::Manual) == 0xa0);
 }
 
 TEST_CASE("Equalizer preset names round-trip", "[protocol][eq]") {

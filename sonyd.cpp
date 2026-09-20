@@ -21,15 +21,16 @@ std::atomic<bool> g_stop{false};
 void handleSignal(int) { g_stop = true; }
 
 void printHelp() {
-    std::cout << "sonyd — background daemon that owns the Bluetooth connection to Sony audio devices\n\n"
-              << "Usage: sonyd [options]\n\n"
-              << "Options:\n"
-              << "  -s, --socket <path>        Custom Unix domain socket path\n"
-              << "  -v, --verbose              Enable verbose diagnostic logging\n"
-              << "  -h, --help                 Display this help menu\n\n"
-              << "sony-wh-cli (and any other client) talks to this daemon over its local\n"
-              << "IPC socket when it is running, so multiple callers can share a single\n"
-              << "Bluetooth connection instead of fighting over it.\n";
+    std::cout
+        << "sonyd — background daemon that owns the Bluetooth connection to Sony audio devices\n\n"
+        << "Usage: sonyd [options]\n\n"
+        << "Options:\n"
+        << "  -s, --socket <path>        Custom Unix domain socket path\n"
+        << "  -v, --verbose              Enable verbose diagnostic logging\n"
+        << "  -h, --help                 Display this help menu\n\n"
+        << "sony-wh-cli (and any other client) talks to this daemon over its local\n"
+        << "IPC socket when it is running, so multiple callers can share a single\n"
+        << "Bluetooth connection instead of fighting over it.\n";
 }
 
 } // namespace
