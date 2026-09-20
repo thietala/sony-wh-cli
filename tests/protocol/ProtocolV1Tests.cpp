@@ -2,6 +2,7 @@
 #include "sony/protocol/ProtocolV1.h"
 #include "sony/protocol/FrameCodec.h"
 #include "sony/transport/FakeTransport.h"
+#include <atomic>
 #include <chrono>
 #include <exception>
 #include <thread>
@@ -22,19 +23,27 @@ namespace {
 // the send is confirmed removes the race rather than papering over it.
 template <class Fn> void runAndAckOnceSent(FakeTransport& fake, Fn&& fn) {
     std::exception_ptr err;
+    std::atomic<bool> finished{false};
     std::thread worker([&] {
         try {
             fn();
         } catch (...) {
             err = std::current_exception();
         }
+        finished.store(true);
     });
-    while (fake.sentCount() == 0) {
+    // Also watch for the worker finishing without ever transmitting (e.g. fn()
+    // throws before reaching send()) - otherwise this would spin forever
+    // waiting for a frame that is never coming.
+    while (fake.sentCount() == 0 && !finished.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 0}));
+    if (fake.sentCount() > 0) {
+        fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 0}));
+    }
     worker.join();
     if (err) std::rethrow_exception(err);
+    REQUIRE(fake.sentCount() > 0);
 }
 
 // First DataMdr payload the host transmitted (ACK frames are skipped).
