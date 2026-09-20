@@ -2,12 +2,40 @@
 #include "sony/protocol/ProtocolV1.h"
 #include "sony/protocol/FrameCodec.h"
 #include "sony/transport/FakeTransport.h"
+#include <chrono>
+#include <exception>
+#include <thread>
 
 using namespace sony;
 using namespace sony::protocol;
 using namespace sony::transport;
 
 namespace {
+
+// Runs `fn` (expected to block in session::send() waiting for an ACK) on a
+// worker thread and queues the ACK only once the request has actually been
+// transmitted. session::send() resets its "seen an ACK" flag right before
+// writing the frame, so an ACK queued any earlier can be picked up by the
+// reader thread and discarded by that reset before fn() ever starts waiting,
+// timing out for good on a queue that is now empty. A real device can never
+// ACK before it has received anything, so ordering the queueIncoming() after
+// the send is confirmed removes the race rather than papering over it.
+template <class Fn> void runAndAckOnceSent(FakeTransport& fake, Fn&& fn) {
+    std::exception_ptr err;
+    std::thread worker([&] {
+        try {
+            fn();
+        } catch (...) {
+            err = std::current_exception();
+        }
+    });
+    while (fake.sentCount() == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 0}));
+    worker.join();
+    if (err) std::rethrow_exception(err);
+}
 
 // First DataMdr payload the host transmitted (ACK frames are skipped).
 std::vector<uint8_t> firstRequestPayload(const FakeTransport& fake) {
@@ -120,14 +148,13 @@ TEST_CASE("ProtocolV1: sets noise control with V1 packet layout", "[protocol][v1
     FakeTransport fake;
     SonyProtocolSession session(&fake);
     session.connect("11:22:33:44:55:66");
-
-    // Host sends command and awaits ACK
-    fake.queueIncoming(FrameCodec::encode(SonyFrame{.type = DataType::Ack, .sequence = 0}));
     ProtocolV1 v1(session);
 
     SECTION("ambient sound carries the level and focus-on-voice") {
-        v1.setNoiseControl(
-            {.mode = NoiseControlMode::Ambient, .ambientLevel = 7, .focusOnVoice = true});
+        runAndAckOnceSent(fake, [&] {
+            v1.setNoiseControl(
+                {.mode = NoiseControlMode::Ambient, .ambientLevel = 7, .focusOnVoice = true});
+        });
         REQUIRE(fake.sentCount() == 1);
         auto sent = FrameCodec::decode(fake.lastSentFrame());
         REQUIRE(sent.type == DataType::DataMdr);
@@ -135,22 +162,29 @@ TEST_CASE("ProtocolV1: sets noise control with V1 packet layout", "[protocol][v1
     }
 
     SECTION("noise cancelling is dual NC with the level at zero") {
-        v1.setNoiseControl(
-            {.mode = NoiseControlMode::NoiseCancelling, .ambientLevel = 7, .focusOnVoice = false});
+        runAndAckOnceSent(fake, [&] {
+            v1.setNoiseControl({.mode = NoiseControlMode::NoiseCancelling,
+                .ambientLevel = 7,
+                .focusOnVoice = false});
+        });
         auto sent = FrameCodec::decode(fake.lastSentFrame());
         REQUIRE(sent.payload == std::vector<uint8_t>{0x68, 0x02, 0x11, 0x01, 0x02, 0x01, 0x00, 0});
     }
 
     SECTION("off clears the effect byte") {
-        v1.setNoiseControl(
-            {.mode = NoiseControlMode::Off, .ambientLevel = 7, .focusOnVoice = false});
+        runAndAckOnceSent(fake, [&] {
+            v1.setNoiseControl(
+                {.mode = NoiseControlMode::Off, .ambientLevel = 7, .focusOnVoice = false});
+        });
         auto sent = FrameCodec::decode(fake.lastSentFrame());
         REQUIRE(sent.payload == std::vector<uint8_t>{0x68, 0x02, 0x00, 0x01, 0x00, 0x01, 0x00, 0});
     }
 
     SECTION("ambient level is clamped to the 1-20 range") {
-        v1.setNoiseControl(
-            {.mode = NoiseControlMode::Ambient, .ambientLevel = 0, .focusOnVoice = false});
+        runAndAckOnceSent(fake, [&] {
+            v1.setNoiseControl(
+                {.mode = NoiseControlMode::Ambient, .ambientLevel = 0, .focusOnVoice = false});
+        });
         auto sent = FrameCodec::decode(fake.lastSentFrame());
         REQUIRE(sent.payload[7] == 1);
     }
