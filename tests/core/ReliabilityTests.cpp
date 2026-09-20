@@ -103,6 +103,31 @@ TEST_CASE("Structured snapshots are escaped versioned and truthful", "[core][jso
     auto status = IpcProtocol::execute(IpcProtocol::parseCommand("status"),service);
     CHECK_FALSE(status.success); CHECK(status.message == "Device disconnected");
 }
+TEST_CASE("JSON factoryReset wipes the pairing so it requires explicit confirmation", "[core][json]") {
+    auto transport = std::make_shared<ReplyTransport>();
+    auto discovery = std::make_shared<FakeDeviceDiscovery>();
+    DeviceService service(transport, discovery);
+    service.connect(DeviceAddress("11:22:33:44:55:66"), "WH-1000XM5");
+
+    auto factoryResetsSent = [&] {
+        size_t count = 0;
+        for (const auto& raw : transport->sentFrames())
+            if (protocol::FrameCodec::decode(raw).payload == std::vector<uint8_t>{0xf8, 0x09, 0x01}) ++count;
+        return count;
+    };
+    auto call = [&](const Json& params) {
+        return JsonProtocol::execute({{"version", 1}, {"id", 1}, {"method", "factoryReset"}, {"params", params}}, service);
+    };
+
+    // Missing, false and wrongly-typed confirmations are all refused, and none reaches the wire.
+    CHECK(call(Json::object())["error"]["code"] == "InvalidRequest");
+    CHECK(call(Json{{"confirm", false}})["error"]["code"] == "InvalidRequest");
+    CHECK(call(Json{{"confirm", "yes"}})["error"]["code"] == "InvalidRequest");
+    CHECK(factoryResetsSent() == 0);
+
+    CHECK(call(Json{{"confirm", true}})["ok"] == true);
+    CHECK(factoryResetsSent() == 1);
+}
 TEST_CASE("Notification callbacks may read state from another thread", "[core][events]") {
     auto transport = std::make_shared<ReplyTransport>();
     SonyDevice device(transport); device.connect(DeviceAddress("11:22:33:44:55:66"),"WH-1000XM5");

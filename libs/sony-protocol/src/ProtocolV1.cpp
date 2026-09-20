@@ -260,6 +260,10 @@ void ProtocolV1::reset() {
     throw SonyException(SonyErrorCode::Unsupported, "Reset is not supported on Protocol V1");
 }
 
+void ProtocolV1::factoryReset() {
+    throw SonyException(SonyErrorCode::Unsupported, "Factory reset is not supported on Protocol V1");
+}
+
 void ProtocolV1::setVpt(int preset) {
     // VPT_SET_PARAM (72), VPT (1), preset
     std::vector<uint8_t> payload = {

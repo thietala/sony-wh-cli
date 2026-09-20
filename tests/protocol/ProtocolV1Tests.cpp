@@ -252,5 +252,6 @@ TEST_CASE("ProtocolV1: unsupported features throw Unsupported", "[protocol][v1]"
     REQUIRE_THROWS_AS(v1.getAdaptiveVolume(), SonyException);
     REQUIRE_THROWS_AS(v1.getAutoPowerOff(), SonyException);
     REQUIRE_THROWS_AS(v1.reset(), SonyException);
+    REQUIRE_THROWS_AS(v1.factoryReset(), SonyException);
     REQUIRE(fake.sentCount() == 0);
 }

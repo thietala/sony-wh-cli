@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace sony::core {
 
@@ -60,6 +61,14 @@ public:
     void setSpeakToChat(bool enabled);
     void setAdaptiveVolume(bool enabled);
     void reset();
+    void factoryReset();
+
+#ifdef SONY_ENABLE_RAW
+    // Debug-build-only escape hatch for reverse-engineering: sends an
+    // arbitrary MDR payload as-is, bypassing IProtocol and every capability
+    // check. Compiled out entirely in every other build type.
+    void sendRaw(const std::vector<uint8_t>& payload);
+#endif
 
 private:
     unsigned _refreshStep{0};

@@ -43,6 +43,7 @@ public:
     void setAdaptiveVolume(bool enabled) override;
 
     void reset() override;
+    void factoryReset() override;
 
 private:
     SonyProtocolSession& _session;

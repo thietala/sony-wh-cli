@@ -2,7 +2,10 @@
 #include "sony/core/JsonProtocol.h"
 #include "sony/protocol/EqualizerPresets.h"
 #include <algorithm>
+#include <cstdint>
 #include <sstream>
+#include <stdexcept>
+#include <vector>
 
 namespace sony::core {
 
@@ -84,10 +87,18 @@ IpcCommand IpcProtocol::parseCommand(std::string_view line) {
         cmd.type = IpcCommandType::Dsee;
     } else if (verb == "autopoweroff" || verb == "apo") {
         cmd.type = IpcCommandType::AutoPowerOff;
+    } else if (verb == "speaktochat") {
+        cmd.type = IpcCommandType::SpeakToChat;
+    } else if (verb == "adaptivevolume") {
+        cmd.type = IpcCommandType::AdaptiveVolume;
     } else if (verb == "status") {
         cmd.type = IpcCommandType::Status;
     } else if (verb == "reset") {
         cmd.type = IpcCommandType::Reset;
+    } else if (verb == "factoryreset") {
+        cmd.type = IpcCommandType::FactoryReset;
+    } else if (verb == "raw") {
+        cmd.type = IpcCommandType::Raw;
     }
 
     if (tokens.size() > 1) {
@@ -139,6 +150,12 @@ IpcResponse IpcProtocol::parseResponse(std::string_view line) {
     return resp;
 }
 
+bool IpcProtocol::needsConfirmation(const IpcCommand& cmd) {
+    if (cmd.type != IpcCommandType::FactoryReset) return false;
+    return std::none_of(cmd.args.begin(), cmd.args.end(),
+        [](const std::string& arg) { return toLower(arg) == kConfirmArg; });
+}
+
 IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service) {
     IpcResponse resp;
 
@@ -154,6 +171,24 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
         resp.data = oss.str();
         return resp;
     }
+
+    // Refuse before the device checks below: an unconfirmed factory reset must
+    // never reach the device, and should say why rather than "No device connected".
+    if (needsConfirmation(cmd)) {
+        resp.success = false;
+        resp.message = "factoryreset wipes the pairing and must be confirmed explicitly (pass --yes)";
+        return resp;
+    }
+
+#ifndef SONY_ENABLE_RAW
+    // Refuse before the device checks below so a Release build says why,
+    // rather than "No device connected".
+    if (cmd.type == IpcCommandType::Raw) {
+        resp.success = false;
+        resp.message = "raw is only available in Debug builds (rebuild sonyd with -DCMAKE_BUILD_TYPE=Debug)";
+        return resp;
+    }
+#endif
 
     auto* dev = service.activeDevice();
     if (cmd.type == IpcCommandType::Status) {
@@ -338,6 +373,24 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             return resp;
         }
 
+        case IpcCommandType::SpeakToChat: {
+            bool on = true;
+            if (!cmd.args.empty() && toLower(cmd.args[0]) == "off") on = false;
+            dev->setSpeakToChat(on);
+            resp.success = true;
+            resp.message = on ? "Speak-to-Chat enabled" : "Speak-to-Chat disabled";
+            return resp;
+        }
+
+        case IpcCommandType::AdaptiveVolume: {
+            bool on = true;
+            if (!cmd.args.empty() && toLower(cmd.args[0]) == "off") on = false;
+            dev->setAdaptiveVolume(on);
+            resp.success = true;
+            resp.message = on ? "Adaptive Volume enabled" : "Adaptive Volume disabled";
+            return resp;
+        }
+
         case IpcCommandType::Status: {
             resp.success = true;
             resp.message = "Connected";
@@ -351,6 +404,45 @@ IpcResponse IpcProtocol::execute(const IpcCommand& cmd, IDeviceService& service)
             resp.message = "Headphone settings initialized; device will disconnect";
             return resp;
         }
+
+        case IpcCommandType::FactoryReset: {
+            dev->factoryReset();
+            resp.success = true;
+            resp.message = "Factory reset sent; pairing wiped, headphones will need to be re-paired";
+            return resp;
+        }
+
+#ifdef SONY_ENABLE_RAW
+        // Debug-build-only escape hatch: send arbitrary hex bytes as an MDR
+        // payload, bypassing every capability check. For reverse-engineering
+        // an opcode before it gets a real implementation — not a supported
+        // command, deliberately undocumented in --help.
+        case IpcCommandType::Raw: {
+            if (cmd.args.empty()) {
+                resp.success = false;
+                resp.message = "Usage: raw <hex byte> [hex byte...]";
+                return resp;
+            }
+            std::vector<uint8_t> payload;
+            payload.reserve(cmd.args.size());
+            try {
+                for (const auto& arg : cmd.args) {
+                    size_t consumed = 0;
+                    unsigned long byte = std::stoul(arg, &consumed, 16);
+                    if (consumed != arg.size() || byte > 0xff) throw std::invalid_argument(arg);
+                    payload.push_back(static_cast<uint8_t>(byte));
+                }
+            } catch (const std::exception&) {
+                resp.success = false;
+                resp.message = "Invalid hex byte in raw payload";
+                return resp;
+            }
+            dev->sendRaw(payload);
+            resp.success = true;
+            resp.message = "Raw payload sent";
+            return resp;
+        }
+#endif
 
         default:
             resp.success = false;

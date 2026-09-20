@@ -329,4 +329,12 @@ void ProtocolV2::reset() {
     _session.send(SonyFrame{ .type = DataType::DataMdr, .payload = {0xf8, 0x09, 0x00} });
 }
 
+void ProtocolV2::factoryReset() {
+    // SET: f8 09 01 — same sub-type as reset(), value 0x01 instead of 0x00.
+    // Confirmed by real-hardware testing to wipe the pairing itself (not
+    // just settings): the phone has to fully re-pair afterward, unlike
+    // reset() where it just reconnects. WH-1000XM5 only.
+    _session.send(SonyFrame{ .type = DataType::DataMdr, .payload = {0xf8, 0x09, 0x01} });
+}
+
 } // namespace sony::protocol

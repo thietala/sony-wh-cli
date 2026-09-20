@@ -37,28 +37,42 @@ public:
                     // Auto-respond to known inquiry requests
                     if (!frame.payload.empty()) {
                         uint8_t op = frame.payload[0];
-                        if (op == 0x22) { // Battery query
+                        uint8_t subtype = frame.payload.size() > 1 ? frame.payload[1] : 0x00;
+                        if (op == 0x00) { // Init handshake
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
-                                .payload = {0x23, 0x00, 85, 0x00}
+                                .sequence = _nextRespSeq(),
+                                .payload = {0x01, 0x00}
+                            }));
+                        } else if (op == 0x22) { // Battery query
+                            // Echo the requested subtype (main/dual/case) so
+                            // every getBattery() sub-query gets a matching
+                            // reply immediately instead of burning its full
+                            // 1s sendAndAwaitResponse timeout — connect()
+                            // calls getBattery() on every test, and 2-3
+                            // wasted seconds per connect adds up fast
+                            // against the 10s per-test CTest timeout.
+                            queueIncoming(FrameCodec::encode(SonyFrame{
+                                .type = DataType::DataMdr,
+                                .sequence = _nextRespSeq(),
+                                .payload = {0x23, subtype, 85, 0x00}
                             }));
                         } else if (op == 0x66) { // NC query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
+                                .sequence = _nextRespSeq(),
                                 .payload = {0x67, 0x17, 0x01, 0x01, 0x00, 0x00, 0x00}
                             }));
                         } else if (op == 0x56) { // EQ query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
+                                .sequence = _nextRespSeq(),
                                 .payload = {0x57, 0x00, 0x00, 0x06, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a}
                             }));
                         } else if (op == 0xe6) { // DSEE query
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
-                                .sequence = 1,
+                                .sequence = _nextRespSeq(),
                                 .payload = {0xe7, 0x01, 0x00}
                             }));
                         }
@@ -68,6 +82,10 @@ public:
         }
         return res;
     }
+
+private:
+    uint8_t _nextRespSeq() { return _respSeq++; }
+    uint8_t _respSeq{0};
 };
 
 } // namespace
@@ -142,8 +160,26 @@ TEST_CASE("IpcProtocol parses CLI command strings", "[core][ipc]") {
         auto cmdApo = IpcProtocol::parseCommand("autopoweroff 3");
         CHECK(cmdApo.type == IpcCommandType::AutoPowerOff);
 
+        auto cmdSpeakToChat = IpcProtocol::parseCommand("speaktochat off");
+        CHECK(cmdSpeakToChat.type == IpcCommandType::SpeakToChat);
+        CHECK(cmdSpeakToChat.args[0] == "off");
+
+        auto cmdAdaptiveVolume = IpcProtocol::parseCommand("adaptivevolume on");
+        CHECK(cmdAdaptiveVolume.type == IpcCommandType::AdaptiveVolume);
+        CHECK(cmdAdaptiveVolume.args[0] == "on");
+
         auto cmdReset = IpcProtocol::parseCommand("reset");
         CHECK(cmdReset.type == IpcCommandType::Reset);
+
+        auto cmdFactoryReset = IpcProtocol::parseCommand("factoryreset");
+        CHECK(cmdFactoryReset.type == IpcCommandType::FactoryReset);
+
+        // Only factoryreset is destructive, and only --yes (any case) confirms it.
+        CHECK(IpcProtocol::needsConfirmation(cmdFactoryReset));
+        CHECK(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset now")));
+        CHECK_FALSE(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("factoryreset --yes")));
+        CHECK_FALSE(IpcProtocol::needsConfirmation(IpcProtocol::parseCommand("FACTORYRESET --YES")));
+        CHECK_FALSE(IpcProtocol::needsConfirmation(cmdReset));
     }
 }
 
@@ -197,6 +233,28 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         auto resp = IpcProtocol::execute(cmd, service);
         CHECK_FALSE(resp.success);
         CHECK(resp.message == "No device connected");
+    }
+
+    SECTION("speak-to-chat and adaptive volume are refused on a model without them") {
+        service.connect(DeviceAddress("11:22:33:44:55:66"), "WH-CH720N");
+        REQUIRE(service.isConnected());
+
+        const auto sent = transport->sentCount();
+        for (const auto* line : {"speaktochat on", "adaptivevolume on"}) {
+            auto resp = IpcProtocol::execute(IpcProtocol::parseCommand(line), service);
+            INFO(line);
+            CHECK_FALSE(resp.success);
+            CHECK(resp.message.find("not supported") != std::string::npos);
+        }
+        CHECK(transport->sentCount() == sent);
+        CHECK(service.snapshot()->speakToChat == false);
+        CHECK(service.snapshot()->adaptiveVolume == false);
+    }
+
+    SECTION("an unconfirmed factory reset says so instead of reporting no device") {
+        auto resp = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset"), service);
+        CHECK_FALSE(resp.success);
+        CHECK(resp.message.find("--yes") != std::string::npos);
     }
 
     SECTION("connected device executes commands") {
@@ -263,6 +321,52 @@ TEST_CASE("IpcProtocol execution through DeviceService", "[core][ipc]") {
         auto apoResp = IpcProtocol::execute(IpcProtocol::parseCommand("apo 3"), service);
         CHECK(apoResp.success);
         CHECK(service.snapshot()->autoPowerOff == 3);
+
+        // Speak-to-Chat
+        auto stcResp = IpcProtocol::execute(IpcProtocol::parseCommand("speaktochat on"), service);
+        CHECK(stcResp.success);
+        CHECK(service.snapshot()->speakToChat == true);
+
+#ifdef SONY_ENABLE_RAW
+        // Raw (Debug builds only): sends the exact bytes given, bypassing
+        // every capability check — used to test unconfirmed opcodes.
+        auto rawResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw d8 d2 01 00"), service);
+        CHECK(rawResp.success);
+        auto rawSent = FrameCodec::decode(transport->lastSentFrame());
+        CHECK(rawSent.payload == std::vector<uint8_t>{0xd8, 0xd2, 0x01, 0x00});
+
+        auto rawNoArgsResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw"), service);
+        CHECK_FALSE(rawNoArgsResp.success);
+
+        auto rawBadHexResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw zz"), service);
+        CHECK_FALSE(rawBadHexResp.success);
+#else
+        // Every other build type must refuse raw and never touch the wire,
+        // even with a connected device and perfectly valid bytes.
+        auto sentBeforeRaw = transport->sentCount();
+        auto rawResp = IpcProtocol::execute(IpcProtocol::parseCommand("raw d8 d2 01 00"), service);
+        CHECK_FALSE(rawResp.success);
+        CHECK(rawResp.message.find("Debug builds") != std::string::npos);
+        CHECK(transport->sentCount() == sentBeforeRaw);
+#endif
+
+        // Adaptive Volume
+        auto avResp = IpcProtocol::execute(IpcProtocol::parseCommand("adaptivevolume off"), service);
+        CHECK(avResp.success);
+        CHECK(service.snapshot()->adaptiveVolume == false);
+
+        // Factory reset wipes the pairing, so it is refused without --yes and
+        // the refusal must never reach the wire, even on a connected XM5.
+        auto sentBeforeFactoryReset = transport->sentCount();
+        auto frRefused = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset"), service);
+        CHECK_FALSE(frRefused.success);
+        CHECK(frRefused.message.find("--yes") != std::string::npos);
+        CHECK(transport->sentCount() == sentBeforeFactoryReset);
+
+        auto frConfirmed = IpcProtocol::execute(IpcProtocol::parseCommand("factoryreset --yes"), service);
+        CHECK(frConfirmed.success);
+        auto frSent = FrameCodec::decode(transport->lastSentFrame());
+        CHECK(frSent.payload == std::vector<uint8_t>{0xf8, 0x09, 0x01});
 
         service.disconnect();
         CHECK_FALSE(service.isConnected());
@@ -347,6 +451,30 @@ TEST_CASE("IpcServer connects on demand and yields the device when idle", "[core
         CHECK(resp.success);
         CHECK_FALSE(service->isConnected());
     }
+
+    SECTION("an unconfirmed factory reset does not take the device") {
+        IpcServer server(service, socket.path);
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        auto resp = client.sendCommand("factoryreset", kCommandTimeout);
+        CHECK_FALSE(resp.success);
+        CHECK(resp.message.find("--yes") != std::string::npos);
+        CHECK_FALSE(service->isConnected());
+    }
+
+#ifndef SONY_ENABLE_RAW
+    SECTION("a refused raw command does not take the device") {
+        IpcServer server(service, socket.path);
+        server.start();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+        auto resp = client.sendCommand("raw d8 d2 01 00", kCommandTimeout);
+        CHECK_FALSE(resp.success);
+        CHECK(resp.message.find("Debug builds") != std::string::npos);
+        CHECK_FALSE(service->isConnected());
+    }
+#endif
 
     SECTION("the device is released after being idle") {
         IpcServer server(service, socket.path, std::chrono::milliseconds(500));
