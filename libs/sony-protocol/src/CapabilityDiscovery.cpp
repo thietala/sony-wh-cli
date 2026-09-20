@@ -11,10 +11,7 @@ CapabilityDiscovery::CapabilityDiscovery(std::shared_ptr<CapabilityCache> cache)
 }
 
 DeviceCapabilities CapabilityDiscovery::discover(
-    IProtocol& protocol,
-    std::string_view deviceName,
-    std::string_view address)
-{
+    IProtocol& protocol, std::string_view deviceName, std::string_view address) {
     SonyModel model = DeviceProfileRegistry::identifyModel(deviceName);
 
     // 1. Fast path: If device is known in profile registry, return capabilities immediately.
@@ -38,20 +35,15 @@ DeviceCapabilities CapabilityDiscovery::discover(
 }
 
 std::future<DeviceCapabilities> CapabilityDiscovery::discoverAsync(
-    IProtocol& protocol,
-    std::string_view deviceName,
-    std::string_view address)
-{
-    return std::async(std::launch::async, [this, &protocol, name = std::string(deviceName), addr = std::string(address)]() {
-        return discover(protocol, name, addr);
-    });
+    IProtocol& protocol, std::string_view deviceName, std::string_view address) {
+    return std::async(std::launch::async,
+        [this, &protocol, name = std::string(deviceName), addr = std::string(address)]() {
+            return discover(protocol, name, addr);
+        });
 }
 
 DeviceCapabilities CapabilityDiscovery::probeDevice(
-    IProtocol& protocol,
-    SonyModel model,
-    std::string_view address)
-{
+    IProtocol& protocol, SonyModel model, std::string_view address) {
     DeviceCapabilities caps;
     std::string firmwareVersion;
 

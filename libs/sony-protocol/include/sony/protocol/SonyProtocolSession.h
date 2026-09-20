@@ -38,11 +38,11 @@ public:
     [[nodiscard]] bool isConnected() const noexcept;
 
     // Send a frame and wait for device ACK
-    void send(const SonyFrame& frame, std::chrono::milliseconds timeout = std::chrono::milliseconds(2000));
+    void send(const SonyFrame& frame,
+        std::chrono::milliseconds timeout = std::chrono::milliseconds(2000));
 
     // Send a request and await matching response frame (skipping unrelated notifications and ACK)
-    SonyFrame sendAndAwaitResponse(
-        const SonyFrame& request,
+    SonyFrame sendAndAwaitResponse(const SonyFrame& request,
         uint8_t retOpcode,
         int retSubtype = -1,
         std::chrono::milliseconds timeout = std::chrono::milliseconds(2000));

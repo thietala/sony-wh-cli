@@ -28,9 +28,7 @@ void Logger::setLogLevel(LogLevel level) noexcept {
     state().level.store(level, std::memory_order_relaxed);
 }
 
-LogLevel Logger::getLogLevel() noexcept {
-    return state().level.load(std::memory_order_relaxed);
-}
+LogLevel Logger::getLogLevel() noexcept { return state().level.load(std::memory_order_relaxed); }
 
 void Logger::setDeveloperMode(bool enabled) noexcept {
     state().developerMode.store(enabled, std::memory_order_relaxed);
@@ -111,73 +109,76 @@ std::string Logger::describePayload(std::span<const uint8_t> payload) {
 
     uint8_t opcode = payload[0];
     switch (opcode) {
-        case 0x22:
-            return "BATTERY_GET";
-        case 0x23: {
-            if (payload.size() >= 4 && payload[1] == 0x00) {
-                return "BATTERY_RET level=" + std::to_string(payload[2]);
-            }
-            if (payload.size() >= 6 && payload[1] == 0x09) {
-                return "BATTERY_RET L=" + std::to_string(payload[2]) + " R=" + std::to_string(payload[4]);
-            }
-            if (payload.size() >= 4 && payload[1] == 0x0a) {
-                return "BATTERY_RET Case=" + std::to_string(payload[2]);
-            }
-            return "BATTERY_RET";
+    case 0x22:
+        return "BATTERY_GET";
+    case 0x23: {
+        if (payload.size() >= 4 && payload[1] == 0x00) {
+            return "BATTERY_RET level=" + std::to_string(payload[2]);
         }
-        case 0x25: {
-            if (payload.size() >= 4 && payload[1] == 0x00) {
-                return "BATTERY_NTFY level=" + std::to_string(payload[2]);
-            }
-            return "BATTERY_NTFY";
+        if (payload.size() >= 6 && payload[1] == 0x09) {
+            return "BATTERY_RET L=" + std::to_string(payload[2]) +
+                   " R=" + std::to_string(payload[4]);
         }
-        case 0x56:
-            return "EQ_GET";
-        case 0x57: {
-            std::string s = "EQ_RET";
-            if (payload.size() >= 3) {
-                s += " preset=" + std::to_string(payload[2]);
-            }
-            return s;
+        if (payload.size() >= 4 && payload[1] == 0x0a) {
+            return "BATTERY_RET Case=" + std::to_string(payload[2]);
         }
-        case 0x58: {
-            std::string s = "EQ_SET";
-            if (payload.size() >= 3) {
-                s += " preset=" + std::to_string(payload[2]);
-            }
-            return s;
+        return "BATTERY_RET";
+    }
+    case 0x25: {
+        if (payload.size() >= 4 && payload[1] == 0x00) {
+            return "BATTERY_NTFY level=" + std::to_string(payload[2]);
         }
-        case 0x66:
-            return "NCASM_GET";
-        case 0x67: {
-            if (payload.size() >= 7 && payload[1] == 0x17) {
-                bool on = (payload[3] != 0);
-                bool ambient = (payload[4] != 0);
-                int level = static_cast<int>(payload[6]);
-                if (!on) return "NCASM_RET mode=Off";
-                if (ambient) return "NCASM_RET mode=Ambient level=" + std::to_string(level);
-                return "NCASM_RET mode=NoiseCancelling";
-            }
-            return "NCASM_RET";
+        return "BATTERY_NTFY";
+    }
+    case 0x56:
+        return "EQ_GET";
+    case 0x57: {
+        std::string s = "EQ_RET";
+        if (payload.size() >= 3) {
+            s += " preset=" + std::to_string(payload[2]);
         }
-        case 0x68: {
-            // NCASM_SET: payload[2] is setting type on v2 (0=NC, 1=Ambient)
-            if (payload.size() >= 5) {
-                if (payload[2] == 0x01) {
-                    return "NCASM_SET mode=Ambient level=" + std::to_string(payload[4]);
-                }
-                return "NCASM_SET mode=NoiseCancelling";
-            }
-            return "NCASM_SET";
+        return s;
+    }
+    case 0x58: {
+        std::string s = "EQ_SET";
+        if (payload.size() >= 3) {
+            s += " preset=" + std::to_string(payload[2]);
         }
-        case 0xe6:
-            return "DSEE_GET";
-        case 0xe7:
-            return (payload.size() >= 3 && payload[2] != 0) ? "DSEE_RET enabled=1" : "DSEE_RET enabled=0";
-        case 0xe8:
-            return (payload.size() >= 3 && payload[2] != 0) ? "DSEE_SET enabled=1" : "DSEE_SET enabled=0";
-        default:
-            break;
+        return s;
+    }
+    case 0x66:
+        return "NCASM_GET";
+    case 0x67: {
+        if (payload.size() >= 7 && payload[1] == 0x17) {
+            bool on = (payload[3] != 0);
+            bool ambient = (payload[4] != 0);
+            int level = static_cast<int>(payload[6]);
+            if (!on) return "NCASM_RET mode=Off";
+            if (ambient) return "NCASM_RET mode=Ambient level=" + std::to_string(level);
+            return "NCASM_RET mode=NoiseCancelling";
+        }
+        return "NCASM_RET";
+    }
+    case 0x68: {
+        // NCASM_SET: payload[2] is setting type on v2 (0=NC, 1=Ambient)
+        if (payload.size() >= 5) {
+            if (payload[2] == 0x01) {
+                return "NCASM_SET mode=Ambient level=" + std::to_string(payload[4]);
+            }
+            return "NCASM_SET mode=NoiseCancelling";
+        }
+        return "NCASM_SET";
+    }
+    case 0xe6:
+        return "DSEE_GET";
+    case 0xe7:
+        return (payload.size() >= 3 && payload[2] != 0) ? "DSEE_RET enabled=1"
+                                                        : "DSEE_RET enabled=0";
+    case 0xe8:
+        return (payload.size() >= 3 && payload[2] != 0) ? "DSEE_SET enabled=1"
+                                                        : "DSEE_SET enabled=0";
+    default:
+        break;
     }
     return "";
 }

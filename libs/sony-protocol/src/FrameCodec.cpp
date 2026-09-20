@@ -9,21 +9,21 @@ std::vector<uint8_t> FrameCodec::escape(std::span<const uint8_t> data) {
 
     for (const uint8_t b : data) {
         switch (b) {
-            case END_MARKER: // 60 (0x3c)
-                result.push_back(ESCAPE_MARKER); // 61 (0x3d)
-                result.push_back(ESCAPED_60);    // 44 (0x2c)
-                break;
-            case ESCAPE_MARKER: // 61 (0x3d)
-                result.push_back(ESCAPE_MARKER);
-                result.push_back(ESCAPED_61);    // 45 (0x2d)
-                break;
-            case START_MARKER: // 62 (0x3e)
-                result.push_back(ESCAPE_MARKER);
-                result.push_back(ESCAPED_62);    // 46 (0x2e)
-                break;
-            default:
-                result.push_back(b);
-                break;
+        case END_MARKER:                     // 60 (0x3c)
+            result.push_back(ESCAPE_MARKER); // 61 (0x3d)
+            result.push_back(ESCAPED_60);    // 44 (0x2c)
+            break;
+        case ESCAPE_MARKER: // 61 (0x3d)
+            result.push_back(ESCAPE_MARKER);
+            result.push_back(ESCAPED_61); // 45 (0x2d)
+            break;
+        case START_MARKER: // 62 (0x3e)
+            result.push_back(ESCAPE_MARKER);
+            result.push_back(ESCAPED_62); // 46 (0x2e)
+            break;
+        default:
+            result.push_back(b);
+            break;
         }
     }
 
@@ -38,21 +38,22 @@ std::vector<uint8_t> FrameCodec::unescape(std::span<const uint8_t> data) {
         const uint8_t curr = data[i];
         if (curr == ESCAPE_MARKER) {
             if (i + 1 >= data.size()) {
-                throw SonyException(SonyErrorCode::InvalidFrame, "No data left for escaped byte data");
+                throw SonyException(
+                    SonyErrorCode::InvalidFrame, "No data left for escaped byte data");
             }
             ++i;
             switch (data[i]) {
-                case ESCAPED_60:
-                    result.push_back(END_MARKER);
-                    break;
-                case ESCAPED_61:
-                    result.push_back(ESCAPE_MARKER);
-                    break;
-                case ESCAPED_62:
-                    result.push_back(START_MARKER);
-                    break;
-                default:
-                    throw SonyException(SonyErrorCode::InvalidFrame, "Unexpected escaped byte");
+            case ESCAPED_60:
+                result.push_back(END_MARKER);
+                break;
+            case ESCAPED_61:
+                result.push_back(ESCAPE_MARKER);
+                break;
+            case ESCAPED_62:
+                result.push_back(START_MARKER);
+                break;
+            default:
+                throw SonyException(SonyErrorCode::InvalidFrame, "Unexpected escaped byte");
             }
         } else {
             result.push_back(curr);
@@ -91,7 +92,8 @@ std::vector<uint8_t> FrameCodec::encode(const SonyFrame& frame) {
     auto escaped = escape(toEscape);
 
     if (escaped.size() + 2 > MAX_FRAME_SIZE) {
-        throw SonyException(SonyErrorCode::InvalidFrame, "Exceeded the max bluetooth message size, and I can't handle chunked messages");
+        throw SonyException(SonyErrorCode::InvalidFrame,
+            "Exceeded the max bluetooth message size, and I can't handle chunked messages");
     }
 
     std::vector<uint8_t> result;
@@ -120,20 +122,22 @@ SonyFrame FrameCodec::decodeBody(std::span<const uint8_t> bodyData) {
     auto unescaped = unescape(bodyData);
 
     if (unescaped.size() < MIN_BODY_SIZE) {
-        throw SonyException(SonyErrorCode::InvalidFrame, "Invalid message: Smaller than the minimum message size");
+        throw SonyException(
+            SonyErrorCode::InvalidFrame, "Invalid message: Smaller than the minimum message size");
     }
 
-    const size_t dataSize = (static_cast<size_t>(unescaped[2]) << 24) |
-                            (static_cast<size_t>(unescaped[3]) << 16) |
-                            (static_cast<size_t>(unescaped[4]) << 8)  |
-                            (static_cast<size_t>(unescaped[5]));
+    const size_t dataSize =
+        (static_cast<size_t>(unescaped[2]) << 24) | (static_cast<size_t>(unescaped[3]) << 16) |
+        (static_cast<size_t>(unescaped[4]) << 8) | (static_cast<size_t>(unescaped[5]));
 
     if (unescaped.size() < 6 + dataSize + 1) {
-        throw SonyException(SonyErrorCode::InvalidFrame, "Invalid message: declared size exceeds received data");
+        throw SonyException(
+            SonyErrorCode::InvalidFrame, "Invalid message: declared size exceeds received data");
     }
 
     const uint8_t expectedChecksum = unescaped[6 + dataSize];
-    const uint8_t actualChecksum = calculateChecksum(std::span<const uint8_t>(unescaped.data(), 6 + dataSize));
+    const uint8_t actualChecksum =
+        calculateChecksum(std::span<const uint8_t>(unescaped.data(), 6 + dataSize));
 
     if (expectedChecksum != actualChecksum) {
         throw SonyException(SonyErrorCode::InvalidChecksum, "Invalid checksum!");

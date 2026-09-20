@@ -11,11 +11,11 @@ namespace sony::transport {
 class TransportBluetoothConnector : public IBluetoothConnector {
 public:
     explicit TransportBluetoothConnector(std::unique_ptr<ITransport> transport,
-                                         std::unique_ptr<IDeviceDiscovery> discovery = nullptr,
-                                         SonyProtocolVersion version = SonyProtocolVersion::V2);
+        std::unique_ptr<IDeviceDiscovery> discovery = nullptr,
+        SonyProtocolVersion version = SonyProtocolVersion::V2);
     explicit TransportBluetoothConnector(ITransport* transport,
-                                         IDeviceDiscovery* discovery = nullptr,
-                                         SonyProtocolVersion version = SonyProtocolVersion::V2);
+        IDeviceDiscovery* discovery = nullptr,
+        SonyProtocolVersion version = SonyProtocolVersion::V2);
     ~TransportBluetoothConnector() override;
 
     int send(char* buf, size_t length) override;

@@ -13,29 +13,28 @@
 #include "ByteMagic.h"
 #include <atomic>
 
-class WindowsBluetoothConnector final : public IBluetoothConnector
-{
+class WindowsBluetoothConnector final : public IBluetoothConnector {
 public:
-	WindowsBluetoothConnector();
+    WindowsBluetoothConnector();
 
-	~WindowsBluetoothConnector();
+    ~WindowsBluetoothConnector();
 
-	virtual void connect(const std::string& addrStr) noexcept(false);
-	virtual int send(char* buf, size_t length) noexcept(false);
-	virtual int recv(char* buf, size_t length) noexcept(false);
-	virtual void disconnect() noexcept;
-	virtual bool isConnected() noexcept;
+    virtual void connect(const std::string& addrStr) noexcept(false);
+    virtual int send(char* buf, size_t length) noexcept(false);
+    virtual int recv(char* buf, size_t length) noexcept(false);
+    virtual void disconnect() noexcept;
+    virtual bool isConnected() noexcept;
 
-	virtual std::vector<BluetoothDevice> getConnectedDevices() noexcept(false);
-	virtual SonyProtocolVersion getProtocolVersion() noexcept;
+    virtual std::vector<BluetoothDevice> getConnectedDevices() noexcept(false);
+    virtual SonyProtocolVersion getProtocolVersion() noexcept;
 
 private:
-	std::vector<BluetoothDevice> _findDevicesInRadio(BLUETOOTH_DEVICE_SEARCH_PARAMS* searchParams);
-	std::string _wstringToUtf8(const std::wstring& wstr);
-	bool _tryConnect(const char* uuid, SOCKADDR_BTH& sab);
+    std::vector<BluetoothDevice> _findDevicesInRadio(BLUETOOTH_DEVICE_SEARCH_PARAMS* searchParams);
+    std::string _wstringToUtf8(const std::wstring& wstr);
+    bool _tryConnect(const char* uuid, SOCKADDR_BTH& sab);
 
-	SOCKET _socket = INVALID_SOCKET;
-	std::atomic<bool> _connected = false;
-	SonyProtocolVersion _protocolVersion = SonyProtocolVersion::V1;
-	void _initSocket();
+    SOCKET _socket = INVALID_SOCKET;
+    std::atomic<bool> _connected = false;
+    SonyProtocolVersion _protocolVersion = SonyProtocolVersion::V1;
+    void _initSocket();
 };

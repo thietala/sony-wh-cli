@@ -86,9 +86,7 @@ TEST_CASE("DeviceEventDispatcher parses battery notifications", "[events]") {
     });
 
     int stateEventCount = 0;
-    dispatcher.onStateChanged([&](const DeviceStateChanged&) {
-        stateEventCount++;
-    });
+    dispatcher.onStateChanged([&](const DeviceStateChanged&) { stateEventCount++; });
 
     // 1. Single battery notification (0x25 0x00 <level=88> <charging=1>)
     std::vector<uint8_t> singleBat = {0x25, 0x00, 88, 1};
@@ -186,14 +184,10 @@ TEST_CASE("Headphones event-driven integration", "[events]") {
     });
 
     int batteryChangeCount = 0;
-    hp.onBatteryChanged([&](const BatteryChanged&) {
-        batteryChangeCount++;
-    });
+    hp.onBatteryChanged([&](const BatteryChanged&) { batteryChangeCount++; });
 
     int ncChangeCount = 0;
-    hp.onNoiseControlChanged([&](const NoiseControlChanged&) {
-        ncChangeCount++;
-    });
+    hp.onNoiseControlChanged([&](const NoiseControlChanged&) { ncChangeCount++; });
 
     // Feed unsolicited battery notification via handleNotification
     std::vector<uint8_t> batNtf = {0x25, 0x00, 78, 1};
@@ -223,13 +217,11 @@ TEST_CASE("DeviceEventDispatcher concurrency and reentrancy safety", "[events][c
     std::atomic<int> receivedCount{0};
 
     // Callback that takes a read or dispatches re-entrantly
-    dispatcher.onBatteryChanged([&](const BatteryChanged&) {
-        receivedCount.fetch_add(1, std::memory_order_relaxed);
-    });
+    dispatcher.onBatteryChanged(
+        [&](const BatteryChanged&) { receivedCount.fetch_add(1, std::memory_order_relaxed); });
 
-    dispatcher.onStateChanged([&](const DeviceStateChanged&) {
-        receivedCount.fetch_add(1, std::memory_order_relaxed);
-    });
+    dispatcher.onStateChanged(
+        [&](const DeviceStateChanged&) { receivedCount.fetch_add(1, std::memory_order_relaxed); });
 
     std::vector<std::thread> workers;
     for (int i = 0; i < 4; ++i) {

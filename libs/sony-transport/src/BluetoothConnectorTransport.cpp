@@ -3,7 +3,8 @@
 
 namespace sony::transport {
 
-BluetoothConnectorTransport::BluetoothConnectorTransport(std::unique_ptr<IBluetoothConnector> connector)
+BluetoothConnectorTransport::BluetoothConnectorTransport(
+    std::unique_ptr<IBluetoothConnector> connector)
     : _ownedConnector(std::move(connector)), _connector(_ownedConnector.get()) {}
 
 BluetoothConnectorTransport::BluetoothConnectorTransport(IBluetoothConnector* connector)
@@ -39,7 +40,8 @@ size_t BluetoothConnectorTransport::send(std::span<const std::byte> data) {
         throw SonyException(SonyErrorCode::Disconnected, "Transport not connected");
     }
     try {
-        int sent = _connector->send(reinterpret_cast<char*>(const_cast<std::byte*>(data.data())), data.size());
+        int sent = _connector->send(
+            reinterpret_cast<char*>(const_cast<std::byte*>(data.data())), data.size());
         if (sent < 0) {
             throw SonyException(SonyErrorCode::TransportFailure, "Failed to send data");
         }
@@ -78,11 +80,10 @@ size_t BluetoothConnectorTransport::receive(std::span<std::byte> buffer) {
     }
 }
 
-IBluetoothConnector* BluetoothConnectorTransport::connector() const noexcept {
-    return _connector;
-}
+IBluetoothConnector* BluetoothConnectorTransport::connector() const noexcept { return _connector; }
 
-BluetoothConnectorDiscovery::BluetoothConnectorDiscovery(std::unique_ptr<IBluetoothConnector> connector)
+BluetoothConnectorDiscovery::BluetoothConnectorDiscovery(
+    std::unique_ptr<IBluetoothConnector> connector)
     : _ownedConnector(std::move(connector)), _connector(_ownedConnector.get()) {}
 
 BluetoothConnectorDiscovery::BluetoothConnectorDiscovery(IBluetoothConnector* connector)
@@ -96,11 +97,10 @@ std::vector<DiscoveredDevice> BluetoothConnectorDiscovery::discover() {
     std::vector<DiscoveredDevice> result;
     result.reserve(bldevs.size());
     for (const auto& dev : bldevs) {
-        result.push_back(DiscoveredDevice{
-            .name = dev.name,
+        result.push_back(DiscoveredDevice{.name = dev.name,
             .address = DeviceAddress(dev.mac),
-                        .paired = dev.paired, .connected = dev.connected
-        });
+            .paired = dev.paired,
+            .connected = dev.connected});
     }
     return result;
 }

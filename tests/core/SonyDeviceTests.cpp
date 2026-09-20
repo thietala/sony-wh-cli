@@ -30,10 +30,7 @@ public:
                 auto frame = FrameCodec::decode(bytes);
                 if (frame.type == DataType::DataMdr) {
                     SonyFrame ackFrame{
-                        .type = DataType::Ack,
-                        .sequence = frame.sequence,
-                        .payload = {}
-                    };
+                        .type = DataType::Ack, .sequence = frame.sequence, .payload = {}};
                     queueIncoming(FrameCodec::encode(ackFrame));
 
                     // Auto-respond to known inquiry requests
@@ -65,7 +62,8 @@ public:
                             queueIncoming(FrameCodec::encode(SonyFrame{
                                 .type = DataType::DataMdr,
                                 .sequence = _nextRespSeq(),
-                                .payload = {0x57, 0x00, 0x00, 0x06, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a}
+                                .payload = {
+                                            0x57, 0x00, 0x00, 0x06, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a}
                             }));
                         } else if (op == 0xe6) { // DSEE query
                             queueIncoming(FrameCodec::encode(SonyFrame{
@@ -82,9 +80,7 @@ public:
     }
 
 private:
-    uint8_t _nextRespSeq() {
-        return _respSeq++;
-    }
+    uint8_t _nextRespSeq() { return _respSeq++; }
     uint8_t _respSeq{0};
 };
 
@@ -136,10 +132,15 @@ TEST_CASE("SonyDevice gates reset to models with a confirmed opcode", "[core][de
     CHECK(otherTransport->sentCount() == sentBeforeReset);
 }
 
-TEST_CASE("SonyDevice refuses speak-to-chat and adaptive volume on models without them", "[core][device]") {
+TEST_CASE("SonyDevice refuses speak-to-chat and adaptive volume on models without them",
+    "[core][device]") {
     // True only if fn() throws the Unsupported error (not some other failure).
     auto unsupported = [](auto&& fn) {
-        try { fn(); } catch (const SonyException& ex) { return ex.code() == SonyErrorCode::Unsupported; }
+        try {
+            fn();
+        } catch (const SonyException& ex) {
+            return ex.code() == SonyErrorCode::Unsupported;
+        }
         return false;
     };
 
@@ -188,17 +189,12 @@ TEST_CASE("SonyDevice control methods and state updates", "[core][device]") {
     std::atomic<int> ncChangeCount{0};
     std::atomic<int> eqChangeCount{0};
 
-    dev.events().onStateChanged([&](const DeviceStateChanged&) {
-        stateChangeCount.fetch_add(1);
-    });
+    dev.events().onStateChanged([&](const DeviceStateChanged&) { stateChangeCount.fetch_add(1); });
 
-    dev.events().onNoiseControlChanged([&](const NoiseControlChanged&) {
-        ncChangeCount.fetch_add(1);
-    });
+    dev.events().onNoiseControlChanged(
+        [&](const NoiseControlChanged&) { ncChangeCount.fetch_add(1); });
 
-    dev.events().onEqualizerChanged([&](const EqualizerChanged&) {
-        eqChangeCount.fetch_add(1);
-    });
+    dev.events().onEqualizerChanged([&](const EqualizerChanged&) { eqChangeCount.fetch_add(1); });
 
     SECTION("ANC control") {
         dev.setAnc(true);
@@ -274,9 +270,7 @@ TEST_CASE("SonyDevice unsolicited notification dispatch", "[core][device]") {
 
     // Device notification for battery: 0x25, 0x00, level 88, not charging
     SonyFrame batNotif{
-        .type = DataType::DataMdr,
-        .sequence = 100,
-        .payload = {0x25, 0x00, 88, 0x00}
+        .type = DataType::DataMdr, .sequence = 100, .payload = {0x25, 0x00, 88, 0x00}
     };
     transport->queueIncoming(FrameCodec::encode(batNotif));
 

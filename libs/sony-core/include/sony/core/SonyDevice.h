@@ -19,8 +19,7 @@ using protocol::SonyProtocolVersion;
 
 class SonyDevice {
 public:
-    explicit SonyDevice(
-        std::shared_ptr<transport::ITransport> transport,
+    explicit SonyDevice(std::shared_ptr<transport::ITransport> transport,
         SonyProtocolVersion version = SonyProtocolVersion::V1);
     ~SonyDevice();
 

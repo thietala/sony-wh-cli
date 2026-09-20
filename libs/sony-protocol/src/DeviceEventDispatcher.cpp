@@ -3,35 +3,40 @@
 
 namespace sony::protocol {
 
-DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onBatteryChanged(BatteryHandler handler) {
+DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onBatteryChanged(
+    BatteryHandler handler) {
     std::lock_guard lock(_mutex);
     auto id = _nextId++;
     _batteryHandlers[id] = std::move(handler);
     return id;
 }
 
-DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onNoiseControlChanged(NoiseControlHandler handler) {
+DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onNoiseControlChanged(
+    NoiseControlHandler handler) {
     std::lock_guard lock(_mutex);
     auto id = _nextId++;
     _noiseControlHandlers[id] = std::move(handler);
     return id;
 }
 
-DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onEqualizerChanged(EqualizerHandler handler) {
+DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onEqualizerChanged(
+    EqualizerHandler handler) {
     std::lock_guard lock(_mutex);
     auto id = _nextId++;
     _equalizerHandlers[id] = std::move(handler);
     return id;
 }
 
-DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onConnectionChanged(ConnectionHandler handler) {
+DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onConnectionChanged(
+    ConnectionHandler handler) {
     std::lock_guard lock(_mutex);
     auto id = _nextId++;
     _connectionHandlers[id] = std::move(handler);
     return id;
 }
 
-DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onStateChanged(DeviceStateHandler handler) {
+DeviceEventDispatcher::SubscriptionId DeviceEventDispatcher::onStateChanged(
+    DeviceStateHandler handler) {
     std::lock_guard lock(_mutex);
     auto id = _nextId++;
     _stateHandlers[id] = std::move(handler);
@@ -130,7 +135,8 @@ bool DeviceEventDispatcher::parseNotification(const SonyFrame& frame, DeviceStat
     return parseNotificationPayload(frame.payload, inOutState);
 }
 
-bool DeviceEventDispatcher::parseNotificationPayload(const std::vector<uint8_t>& payload, DeviceState& inOutState, bool notify) {
+bool DeviceEventDispatcher::parseNotificationPayload(
+    const std::vector<uint8_t>& payload, DeviceState& inOutState, bool notify) {
     if (payload.empty()) {
         return false;
     }
@@ -143,22 +149,26 @@ bool DeviceEventDispatcher::parseNotificationPayload(const std::vector<uint8_t>&
             inOutState.battery.main = static_cast<int>(payload[2]);
             inOutState.battery.charging = (payload[3] == 1);
             if (notify) dispatch(BatteryChanged{inOutState.battery});
-            if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+            if (notify)
+                dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
             return true;
         }
         if (payload.size() >= 6 && payload[1] == 0x09) {
             inOutState.battery.left = static_cast<int>(payload[2]);
             inOutState.battery.right = static_cast<int>(payload[4]);
-            inOutState.battery.main = std::min(static_cast<int>(payload[2]), static_cast<int>(payload[4]));
+            inOutState.battery.main =
+                std::min(static_cast<int>(payload[2]), static_cast<int>(payload[4]));
             inOutState.battery.charging = (payload[3] == 1 || payload[5] == 1);
             if (notify) dispatch(BatteryChanged{inOutState.battery});
-            if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+            if (notify)
+                dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
             return true;
         }
         if (payload.size() >= 4 && payload[1] == 0x0a) {
             inOutState.battery.caseBattery = static_cast<int>(payload[2]);
             if (notify) dispatch(BatteryChanged{inOutState.battery});
-            if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+            if (notify)
+                dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
             return true;
         }
     }
@@ -171,12 +181,15 @@ bool DeviceEventDispatcher::parseNotificationPayload(const std::vector<uint8_t>&
             bool voice = (payload[5] != 0);
             int level = static_cast<int>(payload[6]);
 
-            inOutState.noiseControl.mode = on ? (ambient ? NoiseControlMode::Ambient : NoiseControlMode::NoiseCancelling) : NoiseControlMode::Off;
+            inOutState.noiseControl.mode =
+                on ? (ambient ? NoiseControlMode::Ambient : NoiseControlMode::NoiseCancelling)
+                   : NoiseControlMode::Off;
             inOutState.noiseControl.ambientLevel = ambient ? level : 0;
             inOutState.noiseControl.focusOnVoice = voice;
 
             if (notify) dispatch(NoiseControlChanged{inOutState.noiseControl});
-            if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+            if (notify)
+                dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
             return true;
         }
     }
@@ -192,7 +205,8 @@ bool DeviceEventDispatcher::parseNotificationPayload(const std::vector<uint8_t>&
                 }
             }
             if (notify) dispatch(EqualizerChanged{inOutState.equalizer});
-            if (notify) dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
+            if (notify)
+                dispatch(DeviceStateChanged{std::make_shared<const DeviceState>(inOutState)});
             return true;
         }
     }

@@ -11,9 +11,7 @@ SonyProtocolSession::SonyProtocolSession(std::unique_ptr<transport::ITransport> 
 SonyProtocolSession::SonyProtocolSession(transport::ITransport* transport)
     : _transport(transport) {}
 
-SonyProtocolSession::~SonyProtocolSession() {
-    disconnect();
-}
+SonyProtocolSession::~SonyProtocolSession() { disconnect(); }
 
 void SonyProtocolSession::connect(const transport::DeviceAddress& address) {
     if (isConnected() || _running.load()) {
@@ -68,9 +66,7 @@ bool SonyProtocolSession::isConnected() const noexcept {
     return _running.load() && _transport && _transport->isConnected();
 }
 
-transport::ITransport* SonyProtocolSession::transport() const noexcept {
-    return _transport;
-}
+transport::ITransport* SonyProtocolSession::transport() const noexcept { return _transport; }
 
 void SonyProtocolSession::_startReader() {
     _stopReader();
@@ -141,7 +137,8 @@ void SonyProtocolSession::_handleIncomingBytes(std::span<const std::byte> bytes)
 
 void SonyProtocolSession::_parseStream(std::vector<SonyFrame>& outFrames) {
     while (true) {
-        auto startIt = std::find(_streamBuffer.begin(), _streamBuffer.end(), FrameCodec::START_MARKER);
+        auto startIt =
+            std::find(_streamBuffer.begin(), _streamBuffer.end(), FrameCodec::START_MARKER);
         if (startIt == _streamBuffer.end()) {
             _streamBuffer.clear();
             return;
@@ -241,8 +238,9 @@ void SonyProtocolSession::_handleDecodedFrame(const SonyFrame& frame) {
             if (_pendingRequest && !_pendingRequest->hasResponse) {
                 if (!frame.payload.empty() && frame.payload[0] == _pendingRequest->expectedOpcode) {
                     if (_pendingRequest->expectedSubtype < 0 ||
-                        (frame.payload.size() >= 2 && frame.payload[1] == static_cast<uint8_t>(_pendingRequest->expectedSubtype)))
-                    {
+                        (frame.payload.size() >= 2 &&
+                            frame.payload[1] ==
+                                static_cast<uint8_t>(_pendingRequest->expectedSubtype))) {
                         _pendingRequest->response = frame;
                         _pendingRequest->hasResponse = true;
                         matchedRequest = true;
@@ -282,11 +280,7 @@ void SonyProtocolSession::_handleDecodedFrame(const SonyFrame& frame) {
 
 void SonyProtocolSession::_sendAck(uint8_t seqNumber) {
     Logger::debug(LogCategory::Session, "TX  ACK seq=" + std::to_string(seqNumber));
-    SonyFrame ackFrame{
-        .type = DataType::Ack,
-        .sequence = seqNumber,
-        .payload = {}
-    };
+    SonyFrame ackFrame{.type = DataType::Ack, .sequence = seqNumber, .payload = {}};
     _writeFrame(ackFrame);
 }
 
@@ -297,7 +291,8 @@ void SonyProtocolSession::_writeFrame(const SonyFrame& frame) {
     }
     auto encoded = FrameCodec::encode(frame);
     Logger::logTx(encoded, Logger::describePayload(frame.payload));
-    std::span<const std::byte> byteSpan(reinterpret_cast<const std::byte*>(encoded.data()), encoded.size());
+    std::span<const std::byte> byteSpan(
+        reinterpret_cast<const std::byte*>(encoded.data()), encoded.size());
     try {
         size_t sent = 0;
         while (sent < byteSpan.size()) {
@@ -307,11 +302,16 @@ void SonyProtocolSession::_writeFrame(const SonyFrame& frame) {
         }
     } catch (const SonyException& ex) {
         if (ex.code() != SonyErrorCode::Timeout) {
-            _running = false; _ackCv.notify_all(); _responseCv.notify_all();
+            _running = false;
+            _ackCv.notify_all();
+            _responseCv.notify_all();
         }
         throw;
     } catch (...) {
-        _running = false; _ackCv.notify_all(); _responseCv.notify_all(); throw;
+        _running = false;
+        _ackCv.notify_all();
+        _responseCv.notify_all();
+        throw;
     }
 }
 
@@ -337,12 +337,12 @@ void SonyProtocolSession::send(const SonyFrame& frame, std::chrono::milliseconds
 
     auto deadline = std::chrono::steady_clock::now() + timeout;
     std::unique_lock lock(_sessionMtx);
-    bool received = _ackCv.wait_until(lock, deadline, [this] {
-        return !_running.load() || !isConnected() || _hasAck;
-    });
+    bool received = _ackCv.wait_until(
+        lock, deadline, [this] { return !_running.load() || !isConnected() || _hasAck; });
 
     if (!isConnected() || !_running.load()) {
-        throw SonyException(SonyErrorCode::Disconnected, "Transport disconnected while waiting for ACK");
+        throw SonyException(
+            SonyErrorCode::Disconnected, "Transport disconnected while waiting for ACK");
     }
     if (!received || !_hasAck) {
         throw SonyException(SonyErrorCode::Timeout, "Timeout waiting for ACK");
@@ -350,12 +350,10 @@ void SonyProtocolSession::send(const SonyFrame& frame, std::chrono::milliseconds
     _hasAck = false;
 }
 
-SonyFrame SonyProtocolSession::sendAndAwaitResponse(
-    const SonyFrame& request,
+SonyFrame SonyProtocolSession::sendAndAwaitResponse(const SonyFrame& request,
     uint8_t retOpcode,
     int retSubtype,
-    std::chrono::milliseconds timeout)
-{
+    std::chrono::milliseconds timeout) {
     if (!isConnected()) {
         throw SonyException(SonyErrorCode::Disconnected, "Transport not connected");
     }
@@ -371,19 +369,18 @@ SonyFrame SonyProtocolSession::sendAndAwaitResponse(
         std::lock_guard lock(_sessionMtx);
         _expectedAckSeq = toSend.sequence;
         _hasAck = false;
-        _pendingRequest = PendingRequest{
-            .expectedOpcode = retOpcode,
+        _pendingRequest = PendingRequest{.expectedOpcode = retOpcode,
             .expectedSubtype = retSubtype,
             .hasResponse = false,
             .response = {},
             .hasAck = false,
-            .expectedAckSeq = toSend.sequence
-        };
+            .expectedAckSeq = toSend.sequence};
 
         // Check if matching response was already buffered in _unmatchedFrames
         for (auto it = _unmatchedFrames.begin(); it != _unmatchedFrames.end(); ++it) {
             if (!it->payload.empty() && it->payload[0] == retOpcode) {
-                if (retSubtype < 0 || (it->payload.size() >= 2 && it->payload[1] == static_cast<uint8_t>(retSubtype))) {
+                if (retSubtype < 0 || (it->payload.size() >= 2 &&
+                                          it->payload[1] == static_cast<uint8_t>(retSubtype))) {
                     _pendingRequest->response = *it;
                     _pendingRequest->hasResponse = true;
                     _unmatchedFrames.erase(it);
@@ -398,12 +395,14 @@ SonyFrame SonyProtocolSession::sendAndAwaitResponse(
     auto deadline = std::chrono::steady_clock::now() + timeout;
     std::unique_lock lock(_sessionMtx);
     bool received = _responseCv.wait_until(lock, deadline, [this] {
-        return !_running.load() || !isConnected() || (_pendingRequest && _pendingRequest->hasResponse);
+        return !_running.load() || !isConnected() ||
+               (_pendingRequest && _pendingRequest->hasResponse);
     });
 
     if (!isConnected() || !_running.load()) {
         _pendingRequest.reset();
-        throw SonyException(SonyErrorCode::Disconnected, "Transport disconnected while waiting for response");
+        throw SonyException(
+            SonyErrorCode::Disconnected, "Transport disconnected while waiting for response");
     }
     if (!received || !_pendingRequest || !_pendingRequest->hasResponse) {
         _pendingRequest.reset();
@@ -430,12 +429,8 @@ uint8_t SonyProtocolSession::nextSequenceNumber() noexcept {
     return _sequence.fetch_add(1);
 }
 
-uint8_t SonyProtocolSession::currentSequenceNumber() const noexcept {
-    return _sequence.load();
-}
+uint8_t SonyProtocolSession::currentSequenceNumber() const noexcept { return _sequence.load(); }
 
-void SonyProtocolSession::setSequenceNumber(uint8_t seq) noexcept {
-    _sequence.store(seq);
-}
+void SonyProtocolSession::setSequenceNumber(uint8_t seq) noexcept { _sequence.store(seq); }
 
 } // namespace sony::protocol

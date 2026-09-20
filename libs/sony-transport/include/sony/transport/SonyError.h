@@ -19,14 +19,22 @@ enum class SonyErrorCode {
 
 [[nodiscard]] constexpr std::string_view to_string(SonyErrorCode code) noexcept {
     switch (code) {
-        case SonyErrorCode::Timeout: return "Timeout";
-        case SonyErrorCode::Disconnected: return "Disconnected";
-        case SonyErrorCode::Unsupported: return "Unsupported";
-        case SonyErrorCode::InvalidFrame: return "InvalidFrame";
-        case SonyErrorCode::InvalidChecksum: return "InvalidChecksum";
-        case SonyErrorCode::InvalidResponse: return "InvalidResponse";
-        case SonyErrorCode::TransportFailure: return "TransportFailure";
-        case SonyErrorCode::ProtocolViolation: return "ProtocolViolation";
+    case SonyErrorCode::Timeout:
+        return "Timeout";
+    case SonyErrorCode::Disconnected:
+        return "Disconnected";
+    case SonyErrorCode::Unsupported:
+        return "Unsupported";
+    case SonyErrorCode::InvalidFrame:
+        return "InvalidFrame";
+    case SonyErrorCode::InvalidChecksum:
+        return "InvalidChecksum";
+    case SonyErrorCode::InvalidResponse:
+        return "InvalidResponse";
+    case SonyErrorCode::TransportFailure:
+        return "TransportFailure";
+    case SonyErrorCode::ProtocolViolation:
+        return "ProtocolViolation";
     }
     return "Unknown";
 }

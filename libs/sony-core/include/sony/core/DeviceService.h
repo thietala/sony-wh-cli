@@ -43,7 +43,6 @@ private:
     Clock::time_point _nextAttempt{}, _nextSettings{}, _nextBattery{};
     std::string _target, _selected, _connectionState{"disconnected"}, _lastError;
     void _connect(const transport::DeviceAddress& address, std::string_view name);
-
 };
 
 } // namespace sony::core

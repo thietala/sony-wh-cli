@@ -9,20 +9,13 @@ namespace {
 
 std::string serializeCapabilities(const DeviceCapabilities& caps) {
     std::ostringstream ss;
-    ss << (caps.battery ? "1" : "0") << ","
-       << (caps.dualBattery ? "1" : "0") << ","
-       << (caps.noiseCancelling ? "1" : "0") << ","
-       << (caps.ambientSound ? "1" : "0") << ","
-       << (caps.focusOnVoice ? "1" : "0") << ","
-       << (caps.equalizer ? "1" : "0") << ","
-       << (caps.clearBass ? "1" : "0") << ","
-       << (caps.dsee ? "1" : "0") << ","
-       << (caps.speakToChat ? "1" : "0") << ","
-       << (caps.adaptiveVolume ? "1" : "0") << ","
-       << (caps.autoPowerOff ? "1" : "0") << ","
-       << (caps.firmwareInfo ? "1" : "0") << ","
-       << (caps.codecInfo ? "1" : "0") << ","
-       << (caps.wearSensor ? "1" : "0") << ","
+    ss << (caps.battery ? "1" : "0") << "," << (caps.dualBattery ? "1" : "0") << ","
+       << (caps.noiseCancelling ? "1" : "0") << "," << (caps.ambientSound ? "1" : "0") << ","
+       << (caps.focusOnVoice ? "1" : "0") << "," << (caps.equalizer ? "1" : "0") << ","
+       << (caps.clearBass ? "1" : "0") << "," << (caps.dsee ? "1" : "0") << ","
+       << (caps.speakToChat ? "1" : "0") << "," << (caps.adaptiveVolume ? "1" : "0") << ","
+       << (caps.autoPowerOff ? "1" : "0") << "," << (caps.firmwareInfo ? "1" : "0") << ","
+       << (caps.codecInfo ? "1" : "0") << "," << (caps.wearSensor ? "1" : "0") << ","
        << (caps.multipoint ? "1" : "0");
     return ss.str();
 }
@@ -67,10 +60,7 @@ CapabilityCache::CapabilityCache(std::filesystem::path storagePath)
 }
 
 std::string CapabilityCache::makeKey(
-    SonyModel model,
-    std::string_view firmwareVersion,
-    std::string_view address) noexcept
-{
+    SonyModel model, std::string_view firmwareVersion, std::string_view address) noexcept {
     std::string key = std::string(to_string(model));
     if (!firmwareVersion.empty()) {
         key += "@" + std::string(firmwareVersion);

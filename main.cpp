@@ -7,7 +7,6 @@
 #include "sony/transport/PlatformTransport.h"
 #include "sony/transport/Logger.h"
 
-
 #include <algorithm>
 #include <cctype>
 #include <chrono>
@@ -45,8 +44,9 @@ bool stdinIsInteractive() {
 bool confirmDestructive(const std::string& warning, bool assumeYes) {
     if (assumeYes) return true;
     if (!stdinIsInteractive()) {
-        std::cerr << "Error: " << warning << "\n"
-                  << "This must be confirmed, and stdin is not a terminal. Pass --yes to confirm.\n";
+        std::cerr
+            << "Error: " << warning << "\n"
+            << "This must be confirmed, and stdin is not a terminal. Pass --yes to confirm.\n";
         return false;
     }
     std::cerr << "WARNING: " << warning << "\nContinue? [y/N] " << std::flush;
@@ -55,52 +55,54 @@ bool confirmDestructive(const std::string& warning, bool assumeYes) {
     auto first = answer.find_first_not_of(" \t\r\n");
     auto last = answer.find_last_not_of(" \t\r\n");
     answer = first == std::string::npos ? std::string{} : answer.substr(first, last - first + 1);
-    std::transform(answer.begin(), answer.end(), answer.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(answer.begin(), answer.end(), answer.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
     return answer == "y" || answer == "yes";
 }
 
 void printHelp() {
-    std::cout << "sony-wh-cli — CLI diagnostic and control tool for Sony audio devices\n\n"
-              << "Usage: sony-wh-cli [options] <command> [args...]\n"
-              << "       sony-wh-cli help <command>          Show detailed help for a command\n\n"
-              << "Query commands:\n"
-              << "  devices                    List discovered paired Sony devices\n"
-              << "  info                       Display connected device information & capabilities\n"
-              << "  battery                    Display battery percentage and charging state\n"
-              << "  status                     Display connection status\n\n"
-              << "Control commands:\n"
-              << "  anc on|off                 Enable or disable Active Noise Cancelling\n"
-              << "  ambient <1-20>|off         Set Ambient Sound level or turn ambient off\n"
-              << "  eq get|preset|custom       Get or set the Equalizer (see: help eq)\n"
-              << "  dsee on|off                Toggle DSEE sound enhancement\n"
-              << "  apo <0-5>                  Set Auto-Power-Off duration preset index\n"
-              << "  speaktochat on|off         Toggle Speak-to-Chat auto-pause\n"
-              << "  adaptivevolume on|off      Toggle Adaptive Volume\n\n"
-              << "Destructive commands:\n"
-              << "  reset                      Initialize headphone settings (disconnects the\n"
-              << "                             device; confirmed on WH-1000XM5 only)\n"
-              << "  factoryreset               DESTRUCTIVE: wipes the pairing itself; headphones\n"
-              << "                             must be re-paired afterward (WH-1000XM5 only).\n"
-              << "                             Asks for confirmation; see --yes\n\n"
-              << "Options:\n"
-              << "  -s, --socket <path>        Custom Unix domain socket path for sonyd\n"
-              << "  --yes                      Confirm a destructive command (factoryreset)\n"
-              << "                             without prompting; required when not run from a\n"
-              << "                             terminal, e.g. in a script\n"
-              << "  --direct                   Bypass sonyd for a one-off direct Bluetooth\n"
-              << "                             session (refuses to run alongside a live sonyd)\n"
-              << "  -v, --verbose              Enable verbose diagnostic logging\n"
-              << "  -h, --help                 Display this help menu; after a command, shows\n"
-              << "                             detailed help for that command instead\n\n"
-              << "sony-wh-cli requires sonyd to be running; start it with `sonyd` first,\n"
-              << "or pass --direct to skip the daemon for a single command.\n\n"
-              << "Examples:\n"
-              << "  sony-wh-cli anc on\n"
-              << "  sony-wh-cli ambient 10\n"
-              << "  sony-wh-cli eq bass-boost\n"
-              << "  sony-wh-cli dsee on\n"
-              << "  sony-wh-cli help eq\n";
+    std::cout
+        << "sony-wh-cli — CLI diagnostic and control tool for Sony audio devices\n\n"
+        << "Usage: sony-wh-cli [options] <command> [args...]\n"
+        << "       sony-wh-cli help <command>          Show detailed help for a command\n\n"
+        << "Query commands:\n"
+        << "  devices                    List discovered paired Sony devices\n"
+        << "  info                       Display connected device information & capabilities\n"
+        << "  battery                    Display battery percentage and charging state\n"
+        << "  status                     Display connection status\n\n"
+        << "Control commands:\n"
+        << "  anc on|off                 Enable or disable Active Noise Cancelling\n"
+        << "  ambient <1-20>|off         Set Ambient Sound level or turn ambient off\n"
+        << "  eq get|preset|custom       Get or set the Equalizer (see: help eq)\n"
+        << "  dsee on|off                Toggle DSEE sound enhancement\n"
+        << "  apo <0-5>                  Set Auto-Power-Off duration preset index\n"
+        << "  speaktochat on|off         Toggle Speak-to-Chat auto-pause\n"
+        << "  adaptivevolume on|off      Toggle Adaptive Volume\n\n"
+        << "Destructive commands:\n"
+        << "  reset                      Initialize headphone settings (disconnects the\n"
+        << "                             device; confirmed on WH-1000XM5 only)\n"
+        << "  factoryreset               DESTRUCTIVE: wipes the pairing itself; headphones\n"
+        << "                             must be re-paired afterward (WH-1000XM5 only).\n"
+        << "                             Asks for confirmation; see --yes\n\n"
+        << "Options:\n"
+        << "  -s, --socket <path>        Custom Unix domain socket path for sonyd\n"
+        << "  --yes                      Confirm a destructive command (factoryreset)\n"
+        << "                             without prompting; required when not run from a\n"
+        << "                             terminal, e.g. in a script\n"
+        << "  --direct                   Bypass sonyd for a one-off direct Bluetooth\n"
+        << "                             session (refuses to run alongside a live sonyd)\n"
+        << "  -v, --verbose              Enable verbose diagnostic logging\n"
+        << "  -h, --help                 Display this help menu; after a command, shows\n"
+        << "                             detailed help for that command instead\n\n"
+        << "sony-wh-cli requires sonyd to be running; start it with `sonyd` first,\n"
+        << "or pass --direct to skip the daemon for a single command.\n\n"
+        << "Examples:\n"
+        << "  sony-wh-cli anc on\n"
+        << "  sony-wh-cli ambient 10\n"
+        << "  sony-wh-cli eq bass-boost\n"
+        << "  sony-wh-cli dsee on\n"
+        << "  sony-wh-cli help eq\n";
 }
 
 void printEqualizerPresetList() {
@@ -116,8 +118,9 @@ void printEqualizerPresetList() {
 // pulled straight from EqualizerPresets.h instead of a hand-copied excerpt.
 void printCommandHelp(const std::string& command) {
     std::string cmd = command;
-    std::transform(cmd.begin(), cmd.end(), cmd.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::transform(cmd.begin(), cmd.end(), cmd.begin(), [](unsigned char c) {
+        return static_cast<char>(std::tolower(c));
+    });
 
     if (cmd == "devices") {
         std::cout << "devices — list discovered paired Sony devices\n\n"
@@ -146,13 +149,14 @@ void printCommandHelp(const std::string& command) {
                   << "  sony-wh-cli ambient <1-20>   Enable Ambient Sound at this level\n"
                   << "  sony-wh-cli ambient off      Turn Ambient Sound off\n";
     } else if (cmd == "eq") {
-        std::cout << "eq — get or set the Equalizer\n\n"
-                  << "Usage:\n"
-                  << "  sony-wh-cli eq get                     Show the active preset and band levels\n"
-                  << "  sony-wh-cli eq preset <name>           Set a preset by name\n"
-                  << "  sony-wh-cli eq <name>                  Shorthand for 'eq preset <name>'\n"
-                  << "  sony-wh-cli eq custom <cb> <b1..b5>    Apply custom Clear Bass and 5 bands\n"
-                  << "                                         (each -10..10)\n\n";
+        std::cout
+            << "eq — get or set the Equalizer\n\n"
+            << "Usage:\n"
+            << "  sony-wh-cli eq get                     Show the active preset and band levels\n"
+            << "  sony-wh-cli eq preset <name>           Set a preset by name\n"
+            << "  sony-wh-cli eq <name>                  Shorthand for 'eq preset <name>'\n"
+            << "  sony-wh-cli eq custom <cb> <b1..b5>    Apply custom Clear Bass and 5 bands\n"
+            << "                                         (each -10..10)\n\n";
         printEqualizerPresetList();
     } else if (cmd == "dsee") {
         std::cout << "dsee — toggle DSEE sound enhancement\n\n"
@@ -229,13 +233,17 @@ int main(int argc, char* argv[]) {
     // `sony-wh-cli help <command>` and `sony-wh-cli <command> --help` both
     // show detailed help for that one command instead of the full list.
     if (!commandTokens.empty() && commandTokens[0] == "help") {
-        if (commandTokens.size() > 1) printCommandHelp(commandTokens[1]);
-        else printHelp();
+        if (commandTokens.size() > 1)
+            printCommandHelp(commandTokens[1]);
+        else
+            printHelp();
         return 0;
     }
     if (helpRequested) {
-        if (!commandTokens.empty()) printCommandHelp(commandTokens[0]);
-        else printHelp();
+        if (!commandTokens.empty())
+            printCommandHelp(commandTokens[0]);
+        else
+            printHelp();
         return 0;
     }
 
@@ -261,13 +269,15 @@ int main(int argc, char* argv[]) {
     bool daemonRunning = daemon.isDaemonRunning();
 
     if (direct && daemonRunning) {
-        std::cerr << "Error: sonyd is running and may own the Bluetooth session. Stop sonyd before using --direct.\n";
+        std::cerr << "Error: sonyd is running and may own the Bluetooth session. Stop sonyd before "
+                     "using --direct.\n";
         return 1;
     }
 
     if (!direct && !daemonRunning) {
-        std::cerr << "Error: sonyd is not running at " << socketPath << "\n"
-                  << "Start it with `sonyd`, or pass --direct for a one-off direct Bluetooth session.\n";
+        std::cerr
+            << "Error: sonyd is not running at " << socketPath << "\n"
+            << "Start it with `sonyd`, or pass --direct for a one-off direct Bluetooth session.\n";
         return 1;
     }
 
@@ -276,8 +286,9 @@ int main(int argc, char* argv[]) {
     // token added that the daemon (and IpcProtocol::execute) insist on, so a
     // client that skips this prompt is still refused there.
     if (IpcProtocol::needsConfirmation(IpcProtocol::parseCommand(commandLine))) {
-        if (!confirmDestructive("factoryreset wipes the pairing itself; the headphones must be re-paired afterward.",
-                                assumeYes)) {
+        if (!confirmDestructive("factoryreset wipes the pairing itself; the headphones must be "
+                                "re-paired afterward.",
+                assumeYes)) {
             std::cerr << "Aborted; nothing was sent.\n";
             return 1;
         }
@@ -317,13 +328,13 @@ int main(int argc, char* argv[]) {
             try {
                 service.connect(DeviceAddress(devs.front().address), devs.front().name);
             } catch (const std::exception& ex) {
-                std::cerr << "Notice: initial connection to " << devs.front().name << " deferred: " << ex.what() << "\n";
+                std::cerr << "Notice: initial connection to " << devs.front().name
+                          << " deferred: " << ex.what() << "\n";
             }
         }
     }
 
     auto resp = IpcProtocol::execute(cmd, service);
-
 
     if (resp.success) {
         if (!resp.data.empty()) {

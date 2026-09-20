@@ -4,20 +4,14 @@
 namespace sony::transport {
 
 TransportBluetoothConnector::TransportBluetoothConnector(std::unique_ptr<ITransport> transport,
-                                                         std::unique_ptr<IDeviceDiscovery> discovery,
-                                                         SonyProtocolVersion version)
-    : _ownedTransport(std::move(transport)),
-      _transport(_ownedTransport.get()),
-      _ownedDiscovery(std::move(discovery)),
-      _discovery(_ownedDiscovery.get()),
-      _version(version) {}
+    std::unique_ptr<IDeviceDiscovery> discovery,
+    SonyProtocolVersion version)
+    : _ownedTransport(std::move(transport)), _transport(_ownedTransport.get()),
+      _ownedDiscovery(std::move(discovery)), _discovery(_ownedDiscovery.get()), _version(version) {}
 
-TransportBluetoothConnector::TransportBluetoothConnector(ITransport* transport,
-                                                         IDeviceDiscovery* discovery,
-                                                         SonyProtocolVersion version)
-    : _transport(transport),
-      _discovery(discovery),
-      _version(version) {}
+TransportBluetoothConnector::TransportBluetoothConnector(
+    ITransport* transport, IDeviceDiscovery* discovery, SonyProtocolVersion version)
+    : _transport(transport), _discovery(discovery), _version(version) {}
 
 TransportBluetoothConnector::~TransportBluetoothConnector() = default;
 
@@ -82,30 +76,22 @@ std::vector<BluetoothDevice> TransportBluetoothConnector::getConnectedDevices() 
     std::vector<BluetoothDevice> result;
     result.reserve(discovered.size());
     for (const auto& d : discovered) {
-        result.push_back(BluetoothDevice{
-            .name = d.name,
+        result.push_back(BluetoothDevice{.name = d.name,
             .mac = d.address.str(),
             .paired = std::nullopt,
-            .connected = std::nullopt
-        });
+            .connected = std::nullopt});
     }
     return result;
 }
 
-SonyProtocolVersion TransportBluetoothConnector::getProtocolVersion() noexcept {
-    return _version;
-}
+SonyProtocolVersion TransportBluetoothConnector::getProtocolVersion() noexcept { return _version; }
 
 void TransportBluetoothConnector::setProtocolVersion(SonyProtocolVersion version) noexcept {
     _version = version;
 }
 
-ITransport* TransportBluetoothConnector::transport() const noexcept {
-    return _transport;
-}
+ITransport* TransportBluetoothConnector::transport() const noexcept { return _transport; }
 
-IDeviceDiscovery* TransportBluetoothConnector::discovery() const noexcept {
-    return _discovery;
-}
+IDeviceDiscovery* TransportBluetoothConnector::discovery() const noexcept { return _discovery; }
 
 } // namespace sony::transport

@@ -10,12 +10,12 @@
 #include <deque>
 #include <future>
 
-class MacOSBluetoothConnector final : public IBluetoothConnector
-{
+class MacOSBluetoothConnector final : public IBluetoothConnector {
 public:
     MacOSBluetoothConnector();
     ~MacOSBluetoothConnector();
-    static void connectToMac(MacOSBluetoothConnector* MacOSBluetoothConnector, std::promise<void> connectPromise) noexcept(false);
+    static void connectToMac(MacOSBluetoothConnector* MacOSBluetoothConnector,
+        std::promise<void> connectPromise) noexcept(false);
     virtual void connect(const std::string& addrStr) noexcept(false);
     virtual int send(char* buf, size_t length) noexcept(false);
     virtual int recv(char* buf, size_t length) noexcept(false);
@@ -36,7 +36,7 @@ public:
     SonyProtocolVersion protocolVersion = SonyProtocolVersion::V1;
 
 private:
-    void *rfcommDevice = nullptr;
-    void *rfcommchannel = nullptr;
+    void* rfcommDevice = nullptr;
+    void* rfcommchannel = nullptr;
     std::thread uthread;
 };

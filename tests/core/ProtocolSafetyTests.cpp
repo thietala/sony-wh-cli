@@ -34,8 +34,9 @@ public:
         size_t res = FakeTransport::send(data);
         if (!data.empty()) {
             std::vector<uint8_t> bytes(data.size());
-            std::transform(data.begin(), data.end(), bytes.begin(),
-                           [](std::byte b) { return static_cast<uint8_t>(b); });
+            std::transform(data.begin(), data.end(), bytes.begin(), [](std::byte b) {
+                return static_cast<uint8_t>(b);
+            });
             try {
                 auto frame = FrameCodec::decode(bytes);
                 if (frame.type == DataType::DataMdr && !frame.payload.empty()) {
@@ -62,7 +63,7 @@ std::shared_ptr<OpcodeRecordingTransport> makeTransport() {
 } // namespace
 
 TEST_CASE("Connecting a V1 device by name never sends the power-off opcode",
-          "[core][protocol][v1][regression]") {
+    "[core][protocol][v1][regression]") {
     auto transport = makeTransport();
     DeviceService service(transport, nullptr);
 
@@ -74,7 +75,7 @@ TEST_CASE("Connecting a V1 device by name never sends the power-off opcode",
 }
 
 TEST_CASE("Connecting without a device name never sends the power-off opcode",
-          "[core][protocol][v1][regression]") {
+    "[core][protocol][v1][regression]") {
     // sonyd -d <address> used to label any address "WH-1000XM5", which selected
     // the V2 command set and switched legacy headphones off on connect. With no
     // name the profile must fall back to V1, not to V2.
@@ -88,8 +89,7 @@ TEST_CASE("Connecting without a device name never sends the power-off opcode",
     CHECK_FALSE(transport->sent(kPowerOffOnV1));
 }
 
-TEST_CASE("An unrecognised device name is treated as V1",
-          "[core][protocol][v1][regression]") {
+TEST_CASE("An unrecognised device name is treated as V1", "[core][protocol][v1][regression]") {
     auto transport = makeTransport();
     DeviceService service(transport, nullptr);
 
@@ -101,7 +101,7 @@ TEST_CASE("An unrecognised device name is treated as V1",
 }
 
 TEST_CASE("A V2 generation does not carry over to a later V1 connection",
-          "[core][protocol][v1][regression]") {
+    "[core][protocol][v1][regression]") {
     // The device object is reused across connects. Resolving the generation only
     // when a name was supplied left the previous device's V2 version in place.
     auto transport = makeTransport();
@@ -117,8 +117,7 @@ TEST_CASE("A V2 generation does not carry over to a later V1 connection",
     CHECK_FALSE(transport->sent(kPowerOffOnV1));
 }
 
-TEST_CASE("A known V2 device still selects the V2 command set",
-          "[core][protocol][v2]") {
+TEST_CASE("A known V2 device still selects the V2 command set", "[core][protocol][v2]") {
     // The safe default must not silently downgrade devices that do support V2.
     auto transport = makeTransport();
     DeviceService service(transport, nullptr);

@@ -13,6 +13,23 @@ env:
   BUILD_TYPE: Release
 
 jobs:
+  format:
+    name: clang-format check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      - name: Install clang-format
+        run: sudo apt-get update && sudo apt-get install -y clang-format-18
+
+      # third_party/ is vendored (nlohmann/json) and kept as-is.
+      - name: Check formatting
+        run: |
+          git ls-files -- '*.cpp' '*.h' '*.hpp' '*.cc' '*.cxx' \
+            | grep -v '^third_party/' \
+            | xargs clang-format-18 --dry-run --Werror -style=file
+
   build-and-test:
     name: Build & Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -32,7 +49,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
 
       - name: Install dependencies
         if: matrix.install_deps != ''
